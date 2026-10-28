@@ -3,8 +3,22 @@ import { statusesEqual } from '../updater-fallback'
 import type { UpdateCheckOptions, UpdateStatus } from '../../shared/update-status-types'
 import type { UpdateCheckVariant } from './updater-types'
 import { UpdaterState as BaseUpdaterState } from './updater-state'
+import { LOCAL_MAC_UPDATE_MESSAGE, requiresLocalMacReinstall } from '../updater-local-mac-policy'
 
 export abstract class UpdaterStatus extends BaseUpdaterState {
+  protected blockLocalMacUpdate(): boolean {
+    if (!requiresLocalMacReinstall()) {
+      return false
+    }
+    this.sendStatus({
+      state: 'error',
+      message: LOCAL_MAC_UPDATE_MESSAGE,
+      userInitiated: true,
+      retryable: false
+    })
+    return true
+  }
+
   protected getAutoUpdater(): ElectronAutoUpdater {
     if (!this.autoUpdater) {
       this.autoUpdater = loadElectronAutoUpdater()
