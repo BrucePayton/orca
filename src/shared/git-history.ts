@@ -21,7 +21,8 @@ export type {
   GitHistoryItemStatistics,
   GitHistoryOptions,
   GitHistoryRefCategory,
-  GitHistoryResult
+  GitHistoryResult,
+  GitHistoryScope
 } from './git-history-types'
 export {
   GIT_HISTORY_BASE_REF_COLOR,
@@ -166,9 +167,11 @@ export async function loadGitHistoryFromExecutor(
   options: GitHistoryOptions = {}
 ): Promise<GitHistoryResult> {
   const limit = clampHistoryLimit(options.limit)
+  const scope = options.scope === 'branches' ? 'branches' : 'current'
   const headOid = await resolveCommit(git, cwd, 'HEAD')
   if (!headOid) {
     return {
+      scope,
       items: [],
       hasIncomingChanges: false,
       hasOutgoingChanges: false,
@@ -188,8 +191,8 @@ export async function loadGitHistoryFromExecutor(
       ? rawBaseRef
       : undefined
 
-  // Keep upstream/base as comparison metadata so old workspaces do not gain fetched commits outside their HEAD history.
-  const historyRevisions = [headOid]
+  // Project scope traverses branch namespaces once; the default stays pinned to this workspace.
+  const historyRevisions = scope === 'branches' ? ['--branches', '--remotes', headOid] : [headOid]
 
   let mergeBase: string | undefined
   if (remoteRef?.revision && currentRef.revision && remoteRef.revision !== currentRef.revision) {
@@ -224,6 +227,7 @@ export async function loadGitHistoryFromExecutor(
     currentRef.revision !== mergeBase
 
   return {
+    scope,
     items,
     currentRef,
     remoteRef,

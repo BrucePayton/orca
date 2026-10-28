@@ -54,12 +54,17 @@ export type GitHistoryItem = {
   references?: GitHistoryItemRef[]
 }
 
+export type GitHistoryScope = 'current' | 'branches'
+
 export type GitHistoryOptions = {
+  scope?: GitHistoryScope
   limit?: number
   baseRef?: string | null
 }
 
 export type GitHistoryResult = {
+  /** Absent on older hosts, which only return the current branch. */
+  scope?: GitHistoryScope
   items: GitHistoryItem[]
   currentRef?: GitHistoryItemRef
   remoteRef?: GitHistoryItemRef

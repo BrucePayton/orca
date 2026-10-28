@@ -75,6 +75,7 @@ export const GitCommitCompare = WorktreeSelector.extend({
 })
 
 export const GitHistory = WorktreeSelector.extend({
+  scope: z.enum(['current', 'branches']).optional(),
   limit: z.number().int().min(1).max(200).optional(),
   baseRef: z.string().nullable().optional()
 })

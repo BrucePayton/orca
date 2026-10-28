@@ -235,13 +235,15 @@ describe('git RPC methods', () => {
       makeRequest('git.history', {
         worktree: 'id:wt-1',
         limit: 25,
-        baseRef: 'origin/main'
+        baseRef: 'origin/main',
+        scope: 'branches'
       })
     )
 
     expect(runtime.getRuntimeGitHistory).toHaveBeenCalledWith('id:wt-1', {
       limit: 25,
-      baseRef: 'origin/main'
+      baseRef: 'origin/main',
+      scope: 'branches'
     })
     expect(response).toMatchObject({ ok: true, result: history })
   })

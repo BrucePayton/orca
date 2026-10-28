@@ -79,6 +79,7 @@ export const GIT_METHODS = [
     params: GitHistory,
     handler: async (params, { runtime }) =>
       runtime.getRuntimeGitHistory(params.worktree, {
+        scope: params.scope,
         limit: params.limit,
         baseRef: params.baseRef
       })

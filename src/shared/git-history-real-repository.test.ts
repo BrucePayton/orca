@@ -63,6 +63,28 @@ async function createRepository(inheritedEnv: NodeJS.ProcessEnv = process.env) {
 }
 
 describe('real unrelated Git histories', () => {
+  it('includes local and remote branch tips only when project scope is requested', async () => {
+    const { repo, git } = await createRepository()
+    await git(['update-ref', 'refs/remotes/origin/first', 'first'])
+    const current = await loadGitHistoryFromExecutor(git, repo)
+    expect(current.items.map((item) => item.subject)).toEqual(['V'])
+    const project = await loadGitHistoryFromExecutor(git, repo, { scope: 'branches', limit: 2 })
+    expect(project.scope).toBe('branches')
+    expect(project.items.map((item) => item.subject)).toEqual(['V', 'A'])
+    expect(project.hasMore).toBe(true)
+    expect(project.items[1]?.references?.map((ref) => ref.id)).toContain(
+      'refs/remotes/origin/first'
+    )
+    const expanded = await loadGitHistoryFromExecutor(git, repo, { scope: 'branches', limit: 10 })
+    expect(expanded.items.map((item) => item.subject)).toEqual(['V', 'A', 'B'])
+    expect(expanded.hasMore).toBe(false)
+    await git(['checkout', '--detach', 'first'])
+    await git(['commit', '--quiet', '--allow-empty', '-m', 'Detached'])
+    const detached = await loadGitHistoryFromExecutor(git, repo, { scope: 'branches' })
+    expect(detached.items.map((item) => item.subject)).toContain('Detached')
+    expect(detached.items.map((item) => item.subject)).toContain('V')
+  })
+
   it.each(['repository pointers', 'config overrides'] as const)(
     'ignores inherited Git %s when creating a fixture',
     async (contamination) => {
