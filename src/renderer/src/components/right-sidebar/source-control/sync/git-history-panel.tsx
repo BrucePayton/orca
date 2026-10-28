@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
-import type { GitHistoryItem, GitHistoryResult } from '../../../../../../shared/git-history'
+import type {
+  GitHistoryItem,
+  GitHistoryResult,
+  GitHistoryScope
+} from '../../../../../../shared/git-history'
 import type { GitBranchChangeEntry } from '../../../../../../shared/git-diff-compare-types'
 import {
   buildDefaultGitHistoryColorMap,
@@ -18,6 +22,8 @@ import {
 } from './git-history-commit-context-menu'
 import type { SourceControlRowOpenEvent } from '../listing/split-open'
 import { translate } from '@/i18n/i18n'
+import { GitHistoryScopePicker } from './git-history-scope-picker'
+import { GitHistoryLoadMore } from './git-history-load-more'
 
 export type GitHistoryPanelState =
   | { status: 'idle' | 'loading'; result?: GitHistoryResult; error?: string }
@@ -42,6 +48,9 @@ function clampGitHistoryPanelHeight(height: number): number {
 
 export function GitHistoryPanel({
   state,
+  scope = 'current',
+  onScopeChange,
+  onLoadMore,
   collapsed,
   onToggle,
   onRefresh,
@@ -51,6 +60,9 @@ export function GitHistoryPanel({
   onCommitAction
 }: {
   state: GitHistoryPanelState
+  scope?: GitHistoryScope
+  onScopeChange?: (scope: GitHistoryScope) => void
+  onLoadMore?: () => void
   collapsed: boolean
   onToggle: () => void
   onRefresh: () => void
@@ -74,8 +86,8 @@ export function GitHistoryPanel({
       result.currentRef,
       result.remoteRef,
       result.baseRef,
-      result.hasIncomingChanges,
-      result.hasOutgoingChanges,
+      result.scope !== 'branches' && result.hasIncomingChanges,
+      result.scope !== 'branches' && result.hasOutgoingChanges,
       result.mergeBase
     )
   }, [result])
@@ -315,6 +327,14 @@ export function GitHistoryPanel({
           </Tooltip>
         </div>
       </div>
+      {!collapsed && onScopeChange && (
+        <GitHistoryScopePicker scope={scope} onChange={onScopeChange} />
+      )}
+      {!collapsed && state.status === 'error' && result && (
+        <div role="alert" className="px-3 py-2 text-xs text-destructive">
+          {state.error}
+        </div>
+      )}
       {!collapsed && state.status === 'error' && !result && (
         <div
           className={cn(expandedBodyClassName, 'px-6 py-2 text-[11px] text-destructive')}
@@ -388,6 +408,9 @@ export function GitHistoryPanel({
               </React.Fragment>
             )
           })}
+          {result?.hasMore && onLoadMore && (
+            <GitHistoryLoadMore limit={result.limit} loading={loading} onLoadMore={onLoadMore} />
+          )}
         </div>
       )}
     </div>

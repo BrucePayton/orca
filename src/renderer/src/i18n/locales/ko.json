@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "기록 범위",
+    "current": "현재 브랜치",
+    "branches": "프로젝트 브랜치 그래프",
+    "loadMore": "커밋 더 불러오기",
+    "limit": "최근 커밋 200개를 표시합니다."
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "이 버전의 OpenCode는 선택한 모델로 안전하게 시작할 수 없습니다. OpenCode를 지원되는 버전으로 업데이트하거나 모델 선택을 생략하세요.",

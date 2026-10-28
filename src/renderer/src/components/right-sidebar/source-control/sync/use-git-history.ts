@@ -4,6 +4,11 @@ import type { RuntimeClientTarget } from '../../../../../../shared/runtime-clien
 import { getConnectionId } from '@/lib/connection-context'
 import { getRuntimeGitHistory } from '@/runtime/runtime-git-status-client'
 import type { GitHistoryPanelState } from './git-history-panel'
+import {
+  GIT_HISTORY_DEFAULT_LIMIT,
+  GIT_HISTORY_MAX_LIMIT,
+  type GitHistoryScope
+} from '../../../../../../shared/git-history'
 
 const EMPTY_GIT_HISTORY_STATE: GitHistoryPanelState = { status: 'idle' }
 
@@ -30,14 +35,29 @@ export function useSourceControlGitHistory({
   worktreeMap: ReadonlyMap<string, unknown>
 }): {
   gitHistoryState: GitHistoryPanelState
+  gitHistoryScope: GitHistoryScope
+  setGitHistoryScope: (scope: GitHistoryScope) => void
+  loadMoreGitHistory: () => void
   refreshGitHistory: () => Promise<void>
   refreshGitHistoryRef: RefObject<() => Promise<void>>
 } {
+  const [gitHistoryScope, setScope] = useState<GitHistoryScope>('current')
+  const [historyLimit, setHistoryLimit] = useState(GIT_HISTORY_DEFAULT_LIMIT)
   const [gitHistoryByWorktree, setGitHistoryByWorktree] = useState<
     Record<string, GitHistoryPanelState>
   >({})
   const gitHistoryRequestSeqRef = useRef(0)
   const gitHistoryRequestByWorktreeRef = useRef<Record<string, number>>({})
+  const setGitHistoryScope = useCallback((scope: GitHistoryScope): void => {
+    gitHistoryRequestByWorktreeRef.current = {}
+    setGitHistoryByWorktree({})
+    setHistoryLimit(GIT_HISTORY_DEFAULT_LIMIT)
+    setScope(scope)
+  }, [])
+  const loadMoreGitHistory = useCallback((): void => {
+    gitHistoryRequestByWorktreeRef.current = {}
+    setHistoryLimit((limit) => Math.min(GIT_HISTORY_MAX_LIMIT, limit + GIT_HISTORY_DEFAULT_LIMIT))
+  }, [])
   const gitHistoryState = activeWorktreeId
     ? (gitHistoryByWorktree[activeWorktreeId] ?? EMPTY_GIT_HISTORY_STATE)
     : EMPTY_GIT_HISTORY_STATE
@@ -99,10 +119,19 @@ export function useSourceControlGitHistory({
           worktreePath,
           connectionId
         },
-        { limit: 50, baseRef: compareBaseRef }
+        {
+          limit: historyLimit,
+          baseRef: compareBaseRef,
+          ...(gitHistoryScope === 'branches' ? { scope: gitHistoryScope } : {})
+        }
       )
       if (gitHistoryRequestByWorktreeRef.current[worktreeId] !== requestId) {
         return
+      }
+      if (gitHistoryScope === 'branches' && result.scope !== 'branches') {
+        throw new Error(
+          'This host only supports current-branch history. Select Current branch or update Orca on the host.'
+        )
       }
       setGitHistoryByWorktree((prev) => ({
         ...prev,
@@ -127,6 +156,8 @@ export function useSourceControlGitHistory({
     activeRepoTarget,
     activeWorktreeId,
     compareBaseRef,
+    gitHistoryScope,
+    historyLimit,
     isBranchVisible,
     isFolder,
     isGitHistoryExpanded,
@@ -149,6 +180,8 @@ export function useSourceControlGitHistory({
     // History uses compareBaseRef, which can move independently of effectiveBaseRef.
     activeWorktreeId,
     compareBaseRef,
+    gitHistoryScope,
+    historyLimit,
     isBranchVisible,
     isFolder,
     isGitHistoryExpanded,
@@ -158,5 +191,12 @@ export function useSourceControlGitHistory({
     worktreePath
   ])
 
-  return { gitHistoryState, refreshGitHistory, refreshGitHistoryRef }
+  return {
+    gitHistoryState,
+    gitHistoryScope,
+    setGitHistoryScope,
+    loadMoreGitHistory,
+    refreshGitHistory,
+    refreshGitHistoryRef
+  }
 }

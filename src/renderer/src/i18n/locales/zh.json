@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "历史记录范围",
+    "current": "当前分支",
+    "branches": "项目分支图",
+    "loadMore": "加载更多提交",
+    "limit": "当前显示最近 200 条提交。"
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "此版本的 OpenCode 无法使用所选模型安全启动。请将 OpenCode 更新到受支持的版本，或不指定模型。",

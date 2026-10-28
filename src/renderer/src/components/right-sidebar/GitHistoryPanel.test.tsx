@@ -100,3 +100,36 @@ describe('GitHistoryPanel', () => {
     expect(markup).not.toMatch(/\stitle=/)
   })
 })
+
+describe('history browsing controls', () => {
+  it.each([50, 200])('offers bounded expansion at limit %s', (limit) => {
+    const result = { ...makeHistoryResult(), limit, hasMore: true }
+    const markup = renderToStaticMarkup(
+      <GitHistoryPanel
+        state={{ status: 'ready', result }}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onRefresh={vi.fn()}
+        onLoadMore={vi.fn()}
+      />
+    )
+    if (limit < 200) {
+      expect(markup).toContain('Load more commits')
+    } else {
+      expect(markup).toContain('Showing the latest 200 commits.')
+    }
+  })
+
+  it('keeps refresh errors visible alongside the previous history', () => {
+    const markup = renderToStaticMarkup(
+      <GitHistoryPanel
+        state={{ status: 'error', result: makeHistoryResult(), error: 'Host disconnected' }}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onRefresh={vi.fn()}
+      />
+    )
+    expect(markup).toContain('Host disconnected')
+    expect(markup).toContain('Fix tab overflow')
+  })
+})

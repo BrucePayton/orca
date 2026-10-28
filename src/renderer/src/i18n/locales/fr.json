@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "Portée de l’historique",
+    "current": "Branche actuelle",
+    "branches": "Graphe des branches du projet",
+    "loadMore": "Charger plus de commits",
+    "limit": "Les 200 derniers commits sont affichés."
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "Cette version d’OpenCode ne peut pas démarrer de façon sûre avec le modèle choisi. Mettez OpenCode à jour vers une version compatible ou ne précisez pas de modèle.",
