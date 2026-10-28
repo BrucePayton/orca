@@ -17,6 +17,9 @@ export abstract class UpdaterMenuChecks extends UpdaterScheduling {
       this.sendStatus({ state: 'not-available', userInitiated: true })
       return
     }
+    if (this.blockLocalMacUpdate()) {
+      return
+    }
     if (options?.localBuild) {
       void this.checkForLocalBuildFromMenu()
       return
