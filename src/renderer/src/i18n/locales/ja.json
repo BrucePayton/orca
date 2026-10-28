@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "履歴の範囲",
+    "current": "現在のブランチ",
+    "branches": "プロジェクトのブランチグラフ",
+    "loadMore": "コミットをさらに読み込む",
+    "limit": "最新の200件のコミットを表示しています。"
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "このバージョンの OpenCode では、選択したモデルで安全に起動できません。OpenCode を対応バージョンに更新するか、モデルの指定を省略してください。",

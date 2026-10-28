@@ -276,3 +276,54 @@ describe('useSourceControlGitHistory stale completion', () => {
     expect(mocks.getRuntimeGitHistory).not.toHaveBeenCalled()
   })
 })
+
+describe('project history scope and loading', () => {
+  it('discards current-branch results when switching to project scope', async () => {
+    const current = deferred<GitHistoryResult>()
+    mocks.getRuntimeGitHistory
+      .mockReturnValueOnce(current.promise)
+      .mockResolvedValueOnce({ ...historyResult('project'), scope: 'branches' })
+    await mount()
+    await act(async () => latest?.setGitHistoryScope('branches'))
+    await flush()
+    await act(async () => current.resolve(historyResult('stale')))
+    await flush()
+    expect(latest?.gitHistoryState.result?.items[0]?.subject).toBe('project')
+    expect(mocks.getRuntimeGitHistory).toHaveBeenLastCalledWith(
+      expect.objectContaining({ target: { kind: 'local' } }),
+      { scope: 'branches', limit: 50, baseRef: 'origin/main' }
+    )
+  })
+
+  it('does not label old-host current-branch results as a project graph', async () => {
+    await mount({ activeRepoTarget: { kind: 'environment', environmentId: 'old-host' } })
+    await act(async () => latest?.setGitHistoryScope('branches'))
+    await flush()
+    expect(latest?.gitHistoryState.status).toBe('error')
+    expect(latest?.gitHistoryState.result).toBeUndefined()
+    expect(latest?.gitHistoryState.error).toContain('Current branch')
+    await act(async () => latest?.setGitHistoryScope('current'))
+    await flush()
+    expect(latest?.gitHistoryState.status).toBe('ready')
+  })
+
+  it('extends history to the host cap and resets it when changing scope', async () => {
+    await mount()
+    for (let index = 0; index < 4; index += 1) {
+      await act(async () => latest?.loadMoreGitHistory())
+      await flush()
+    }
+    expect(mocks.getRuntimeGitHistory).toHaveBeenLastCalledWith(expect.anything(), {
+      limit: 200,
+      baseRef: 'origin/main'
+    })
+    mocks.getRuntimeGitHistory.mockResolvedValue({ ...historyResult('project'), scope: 'branches' })
+    await act(async () => latest?.setGitHistoryScope('branches'))
+    await flush()
+    expect(mocks.getRuntimeGitHistory).toHaveBeenLastCalledWith(expect.anything(), {
+      limit: 50,
+      baseRef: 'origin/main',
+      scope: 'branches'
+    })
+  })
+})

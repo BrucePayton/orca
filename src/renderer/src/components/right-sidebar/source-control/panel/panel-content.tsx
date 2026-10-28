@@ -27,6 +27,9 @@ export function SourceControlPanelContent(props: SourceControlPanelReadyProps) {
     filterQuery,
     filteredBranchEntries,
     gitHistoryState,
+    gitHistoryScope,
+    setGitHistoryScope,
+    loadMoreGitHistory,
     handleAbortOperationForConflict,
     handleCommitAction,
     handleContextMenu,
@@ -215,6 +218,9 @@ export function SourceControlPanelContent(props: SourceControlPanelReadyProps) {
         <div className="sticky bottom-0 z-10 mt-auto shrink-0 border-t border-border bg-sidebar/95 backdrop-blur-sm">
           <GitHistoryPanel
             state={gitHistoryState}
+            scope={gitHistoryScope}
+            onScopeChange={setGitHistoryScope}
+            onLoadMore={loadMoreGitHistory}
             collapsed={collapsedSections.has('history')}
             onToggle={() => toggleSection('history')}
             onRefresh={() => void refreshGitHistory()}

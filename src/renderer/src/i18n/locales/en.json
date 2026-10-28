@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "History scope",
+    "current": "Current branch",
+    "branches": "Project branch graph",
+    "loadMore": "Load more commits",
+    "limit": "Showing the latest 200 commits."
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "OpenCode cannot safely start with a chosen model on this version. Update OpenCode to a supported release, or omit the model choice.",

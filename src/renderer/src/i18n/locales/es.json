@@ -1,4 +1,11 @@
 {
+  "gitHistory": {
+    "scope": "Ámbito del historial",
+    "current": "Rama actual",
+    "branches": "Grafo de ramas del proyecto",
+    "loadMore": "Cargar más commits",
+    "limit": "Se muestran los últimos 200 commits."
+  },
   "agentLaunch": {
     "opencode": {
       "updateRequired": "Esta versión de OpenCode no puede iniciarse de forma segura con el modelo elegido. Actualiza OpenCode a una versión compatible u omite la selección de modelo.",
