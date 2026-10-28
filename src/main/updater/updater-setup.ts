@@ -1,4 +1,5 @@
 import { app, powerMonitor } from 'electron'
+import { requiresLocalMacReinstall } from '../updater-local-mac-policy'
 import type { BrowserWindow } from 'electron'
 import type { ReleaseBuild, ReleaseChannel } from '../../shared/release-channel'
 import type { ReleaseBuildListOptions } from '../updater-release-build-cache'
@@ -136,7 +137,7 @@ export class UpdaterSetup extends UpdaterDownloadInstall {
       this.sendErrorStatus(`The server update did not complete: ${serveHandoffFailure}`, true)
     }
 
-    if (!app.isPackaged) {
+    if (!app.isPackaged || requiresLocalMacReinstall()) {
       return
     }
 

@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { requiresLocalMacReinstall } from '../updater-local-mac-policy'
 import { isMacInstallRequested } from '../updater-mac-install'
 import { withUpdaterSpan } from '../observability/instrumentation'
 import {
@@ -44,6 +45,9 @@ export abstract class UpdaterScheduling extends UpdaterCheckFailure {
   protected runBackgroundUpdateCheck(
     nudgeId: string | null = this.getPersistedPendingUpdateNudgeId()
   ): boolean {
+    if (requiresLocalMacReinstall()) {
+      return false
+    }
     if (
       this.pendingQuitAndInstallTimer ||
       this.quitAndInstallInProgress ||
