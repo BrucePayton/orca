@@ -8,8 +8,8 @@ import { REMOTE_RUNTIME_SHARED_CONTROL_CAPABILITY } from '../../../shared/protoc
 import {
   createSharedControlTestServer,
   closeSharedControlTestServers
-} from '../../../shared/remote-runtime-shared-control-test-server'
-import { getRuntimeEnvironmentStatus } from './runtime-environment-transport-routing'
+} from '../../../shared/remote-runtime/control/remote-runtime-shared-control-test-server'
+import { getRuntimeEnvironmentStatus } from './runtime-environment-status-probe'
 import {
   getRuntimeEnvironmentStatusOwner,
   resetRuntimeEnvironmentStatusOwners

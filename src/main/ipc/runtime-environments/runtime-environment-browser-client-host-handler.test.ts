@@ -28,7 +28,7 @@ vi.mock('electron', () => ({ ipcMain: { handle: handleMock } }))
 vi.mock('../../../shared/runtime-environment-store', () => ({
   resolveEnvironment: resolveEnvironmentMock
 }))
-vi.mock('./runtime-environment-transport-routing', () => ({
+vi.mock('./runtime-environment-status-probe', () => ({
   getRuntimeEnvironmentStatus: getRuntimeEnvironmentStatusMock
 }))
 vi.mock('../../browser/paired-runtime-browser-client-host-runtime', () => ({
@@ -153,15 +153,11 @@ describe('runtime environment browser client host handler', () => {
       'runtimeEnvironments:prepareBrowserClientHostPlacement'
     )
 
-    // A create that would have gone server-side anyway must not fail because the probe it now
-    // always makes could not complete.
     await expect(prepare(null, { selector: 'environment-a' })).resolves.toEqual({ kind: 'server' })
     expect(startHostMock).not.toHaveBeenCalled()
   })
 
-  // Why this guard carries the case alone now: a probe that cannot answer resolves to server
-  // placement instead of throwing, so nothing else notices that the user detached the runtime
-  // while it was in flight.
+  // Probe failure falls back to server placement; this guard alone detects concurrent manual disconnect.
   it('rejects a manual disconnect that lands while the probe is in flight', async () => {
     getRuntimeEnvironmentStatusMock.mockImplementation(async () => {
       manuallyDisconnectedMock.mockReturnValue(true)

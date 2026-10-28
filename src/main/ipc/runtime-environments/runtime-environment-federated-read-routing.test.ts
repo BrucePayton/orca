@@ -16,7 +16,7 @@ const { sendRemoteRuntimeRequestMock, sendRemoteRuntimeSharedControlRequestMock 
   })
 )
 
-vi.mock('../../../shared/remote-runtime-client', () => ({
+vi.mock('../../../shared/remote-runtime/remote-runtime-client', () => ({
   sendRemoteRuntimeRequest: sendRemoteRuntimeRequestMock
 }))
 
@@ -26,16 +26,13 @@ vi.mock('./runtime-environment-request-connections', async () => {
     sendRemoteRuntimeConnectionRequest: vi.fn(),
     sendRemoteRuntimeSharedControlRequest: sendRemoteRuntimeSharedControlRequestMock,
     reconnectRemoteRuntimeSharedControlConnection: vi.fn(),
-    retryRemoteRuntimeSharedControlConnectionNow: vi.fn(),
     ensureRemoteRuntimeSharedControlConnection: vi.fn(),
     pauseRemoteRuntimeSharedControlRetry: vi.fn()
   })
 })
 
-import {
-  callRuntimeEnvironment,
-  resetSharedControlSupport
-} from './runtime-environment-transport-routing'
+import { callRuntimeEnvironment } from './runtime-environment-transport-routing'
+import { resetSharedControlSupport } from './runtime-environment-shared-control-support'
 
 describe('federated read RPC transport routing', () => {
   let userDataPath: string
