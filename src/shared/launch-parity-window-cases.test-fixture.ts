@@ -1,3 +1,5 @@
+import { withAgentWorktreePolicy } from './agent-worktree-policy'
+import { quoteStartupArg } from './tui-agent-startup-shell'
 // Test-only (never imported by production code): the window-lane launch parity table for rows 2
 // (typed prompt into a new tab) and 6 (continue from transcript). Renderer suites assert a real
 // producer + pane sends `request`; main suites feed it to pty:spawn and assert `provider`.
@@ -67,6 +69,21 @@ function launch(
   provider: WindowProviderFacts,
   settings?: Record<string, unknown>
 ): WindowLaunchCase {
+  if (producer.kind === 'quick-command' || producer.kind === 'continuation') {
+    const guided = withAgentWorktreePolicy(producer.prompt, {
+      workspaceKind: workspace.kind === 'folder' ? 'folder' : 'git-worktree'
+    })
+    for (const shell of ['posix', 'powershell', 'cmd'] as const) {
+      const quoted = quoteStartupArg(producer.prompt, shell)
+      if (request.command.includes(quoted)) {
+        request = {
+          ...request,
+          command: request.command.replace(quoted, quoteStartupArg(guided, shell))
+        }
+        break
+      }
+    }
+  }
   return { name, row, client, workspace, producer, request, provider, settings }
 }
 // A quick command's prompt; the apostrophe shows which shell the command was quoted for.

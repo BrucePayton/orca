@@ -1,3 +1,5 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
+import { quoteStartupArg } from '../../../shared/tui-agent-startup-shell'
 // What each call site's arguments resolve to on the launch command line, and whether the
 // permission-bypass flag survives. The bypass bit has no storage of its own — it lives inside the
 // arguments string — so losing it here is silent and security-relevant.
@@ -116,7 +118,10 @@ describe('agent launch caller arguments and permission bypass', () => {
     const args = profile.args.agentArgs === undefined ? `'${CODEX_BYPASS}'` : "'--model' 'gpt-5.5'"
     // Why: quick-command is the ONE call site that carries a prompt and names no delivery mode, so
     // it takes the default auto-submit path and folds the prompt into argv for an argv agent.
-    const argvPrompt = profile.id === 'quick-command' ? ` '${profile.args.prompt}'` : ''
+    const argvPrompt =
+      profile.id === 'quick-command'
+        ? ` ${quoteStartupArg(withAgentWorktreePolicy(profile.args.prompt ?? ''), 'posix')}`
+        : ''
     expect(command).toBe(`codex ${args}${argvPrompt}`)
   })
 

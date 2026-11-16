@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 import './orca-runtime-test-lifecycle.spec'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -70,7 +71,7 @@ async function runCreate(
 const DRAFT = 'https://github.com/stablyai/orca/issues/123'
 
 // `worktree.create` now reaches the create through the launch executor; for a linked draft the
-// user must be left with exactly what the create alone gave them.
+// user must get the same draft delivery after workflow guidance is attached.
 describe('a linked-draft create through the launch executor', () => {
   it.each([false, true])(
     'matches the create when the default agent cannot be launched (activate %s)',
@@ -82,7 +83,10 @@ describe('a linked-draft create through the launch executor', () => {
       }
       const request = { startupDraft: DRAFT, activate }
 
-      const before = await runCreate('create', settings, request)
+      const before = await runCreate('create', settings, {
+        ...request,
+        startupDraft: withAgentWorktreePolicy(DRAFT)
+      })
       const after = await runCreate('launch', settings, request)
 
       expect(after).toEqual(before)
@@ -98,7 +102,10 @@ describe('a linked-draft create through the launch executor', () => {
     const settings = { defaultTuiAgent: null, agentDefaultArgs: {}, detected: ['claude'] }
     const request = { startupDraft: DRAFT, activate: false }
 
-    const before = await runCreate('create', settings, request)
+    const before = await runCreate('create', settings, {
+      ...request,
+      startupDraft: withAgentWorktreePolicy(DRAFT)
+    })
     const after = await runCreate('launch', settings, request)
 
     expect(after).toEqual(before)
@@ -111,7 +118,10 @@ describe('a linked-draft create through the launch executor', () => {
     const settings = { defaultTuiAgent: null, agentDefaultArgs: {}, detected: [] }
     const request = { startupDraft: DRAFT, activate: false }
 
-    const before = await runCreate('create', settings, request)
+    const before = await runCreate('create', settings, {
+      ...request,
+      startupDraft: withAgentWorktreePolicy(DRAFT)
+    })
     const after = await runCreate('launch', settings, request)
 
     expect(after).toEqual(before)
@@ -123,7 +133,10 @@ describe('a linked-draft create through the launch executor', () => {
     const settings = { defaultTuiAgent: null, agentDefaultArgs: {}, detected: ['codex'] }
     const request = { startupDraft: DRAFT, createdWithAgent: 'claude' as const, activate: false }
 
-    const before = await runCreate('create', settings, request)
+    const before = await runCreate('create', settings, {
+      ...request,
+      startupDraft: withAgentWorktreePolicy(DRAFT)
+    })
     const after = await runCreate('launch', settings, request)
 
     expect(after).toEqual(before)

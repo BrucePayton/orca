@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
 import { ensureAgentStartupInTerminal, type LinkedWorkItemSummary } from '@/lib/new-workspace'
 import { seedNativeChatLaunchDraftForAgentTab } from '@/lib/agent-launch-prompt-delivery'
 import { createBrowserUuid } from '@/lib/browser-uuid'
@@ -100,6 +101,7 @@ export async function submitFolderWorkspaceCreate({
   // `orca-ide` rename must not be applied for remote launches.
   const launchIsRemote = Boolean(projectGroup.connectionId)
   const launchShell = resolveExecutionHostAgentStartupShell(launchHost, terminalWindowsShell)
+  const taskPrompt = withAgentWorktreePolicy(note, { workspaceKind: 'folder' })
   const startupPlan =
     quickAgent && launchPlatform && linkedWorkItem
       ? buildFolderWorkspaceLinkedStartupPlan({
@@ -116,7 +118,7 @@ export async function submitFolderWorkspaceCreate({
       : quickAgent && launchPlatform
         ? buildAgentStartupPlan({
             agent: quickAgent,
-            prompt: note,
+            prompt: taskPrompt,
             cmdOverrides: agentCmdOverrides ?? {},
             agentArgs,
             agentEnv,
@@ -139,7 +141,7 @@ export async function submitFolderWorkspaceCreate({
           runtimeEnvironmentId,
           executionHostId: getNewWorkspaceProjectGroupHostId(projectGroup)
         },
-        prompt: launchDraftPrompt ?? note,
+        prompt: launchDraftPrompt ?? taskPrompt,
         promptDelivery: launchDraftPrompt ? 'draft' : 'auto-submit'
       })
     : null

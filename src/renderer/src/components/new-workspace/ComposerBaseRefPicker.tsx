@@ -33,6 +33,9 @@ export function ComposerBaseRefPicker({
   const updateRepo = useAppStore((state) => state.updateRepo)
   return (
     <div className="space-y-1">
+      <p className="text-xs text-muted-foreground">
+        {translate('workspace.baseline.label', 'Baseline (required)')}
+      </p>
       <CreateFromPicker
         // Why: branch search state is repo-scoped, so a project switch must drop it before the next paint.
         key={repoId}
@@ -41,6 +44,7 @@ export function ComposerBaseRefPicker({
         worktrees={repoWorktrees}
         value={baseBranch ?? ''}
         compact
+        requireExplicitSelection
         readOnly={readOnly}
         onValueChange={(nextBaseBranch) => onBaseBranchChange(nextBaseBranch || undefined)}
         onSetDefault={

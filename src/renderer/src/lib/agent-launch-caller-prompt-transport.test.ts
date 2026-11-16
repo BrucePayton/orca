@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 // How each call site's prompt reaches the agent: folded into argv, or pasted once the TUI is
 // ready — and whether it submits. The choice is a per-agent table crossed with the delivery mode
 // the call site asks for, so it is pinned along both axes.
@@ -237,7 +238,7 @@ describe('agent launch caller prompt transport', () => {
       // Through the host, the paste waits for the agent to be started in the tab.
       await vi.waitFor(() =>
         expect(mockPasteDraftWhenAgentReady.mock.calls[0]?.[0]).toMatchObject({
-          content: PROMPT,
+          content: withAgentWorktreePolicy(PROMPT),
           submit: row.submits
         })
       )
@@ -246,7 +247,7 @@ describe('agent launch caller prompt transport', () => {
     }
     if (row.transport === 'env') {
       expect(queuedStartupPayload(store)?.env).toMatchObject({
-        ORCA_HERMES_STARTUP_QUERY: PROMPT
+        ORCA_HERMES_STARTUP_QUERY: withAgentWorktreePolicy(PROMPT)
       })
     }
   })

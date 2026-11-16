@@ -106,6 +106,7 @@ function setStore(hostCase: HostCase): void {
 
 function startLinearIssue(): Promise<boolean> {
   return launchWorkItemDirect({
+    baseBranch: 'origin/main',
     repoId: 'repo-1',
     launchSource: 'task_page',
     openModalFallback: vi.fn(),

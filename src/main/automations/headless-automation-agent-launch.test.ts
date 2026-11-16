@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 import { describe, expect, it, vi } from 'vitest'
 import { launchHeadlessAutomationAgent } from './headless-automation-agent-launch'
 
@@ -72,7 +73,7 @@ describe('headless automation agent launch', () => {
 
     expect(runtime.launchAgentTerminal).toHaveBeenCalledWith('id:wt-1', {
       agent: 'hermes',
-      prompt: 'fix the flaky test',
+      prompt: withAgentWorktreePolicy('fix the flaky test'),
       title: 'Nightly'
     })
     expect(runtime.deliverStartupFollowup).not.toHaveBeenCalled()
@@ -86,7 +87,7 @@ describe('headless automation agent launch', () => {
 
     expect(runtime.launchAgentTerminal).toHaveBeenCalledWith('id:wt-1', {
       agent: 'claude',
-      prompt: 'fix the flaky test',
+      prompt: withAgentWorktreePolicy('fix the flaky test'),
       title: 'Nightly',
       extraAgentArgs: '--model opus'
     })
@@ -120,7 +121,7 @@ describe('headless automation agent launch', () => {
     expect(runtime.deliverStartupFollowup).toHaveBeenCalledTimes(1)
     expect(runtime.deliverStartupFollowup).toHaveBeenCalledWith('term_existing', {
       expectedProcess: 'aider',
-      prompt: 'fix the flaky test'
+      prompt: withAgentWorktreePolicy('fix the flaky test')
     })
     finishDelivery(true)
   })
@@ -141,7 +142,7 @@ describe('headless automation agent launch', () => {
       activate: false,
       setupDecision: 'skip',
       startupAgent: 'claude',
-      startupPrompt: 'fix the flaky test',
+      startupPrompt: withAgentWorktreePolicy('fix the flaky test'),
       startupExtraAgentArgs: '--model opus',
       createdWithAgent: 'claude',
       telemetrySource: 'unknown'
@@ -169,7 +170,7 @@ describe('headless automation agent launch', () => {
     expect(runtime.deliverStartupFollowup).toHaveBeenCalledTimes(1)
     expect(runtime.deliverStartupFollowup).toHaveBeenCalledWith('term_new', {
       expectedProcess: 'goose',
-      prompt: 'fix the flaky test'
+      prompt: withAgentWorktreePolicy('fix the flaky test')
     })
   })
 

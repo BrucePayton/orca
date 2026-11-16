@@ -33,7 +33,19 @@ vi.mock('@/components/ui/command', () => ({
   Command: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   CommandEmpty: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   CommandInput: () => <input />,
-  CommandItem: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+  CommandItem: ({
+    children,
+    onSelect,
+    disabled
+  }: {
+    children: React.ReactNode
+    onSelect?: () => void
+    disabled?: boolean
+  }) => (
+    <button disabled={disabled} onClick={onSelect}>
+      {children}
+    </button>
+  ),
   CommandList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
 }))
 
@@ -72,7 +84,10 @@ function makeRepo(overrides: Partial<Repo>): Repo {
   }
 }
 
-async function renderPicker(repo: Repo): Promise<void> {
+async function renderPicker(
+  repo: Repo,
+  props: Partial<React.ComponentProps<typeof CreateFromPicker>> = {}
+): Promise<void> {
   await act(async () => {
     root.render(
       <TooltipProvider>
@@ -82,6 +97,7 @@ async function renderPicker(repo: Repo): Promise<void> {
           worktrees={[]}
           value=""
           onValueChange={vi.fn()}
+          {...props}
         />
       </TooltipProvider>
     )
@@ -89,6 +105,24 @@ async function renderPicker(repo: Repo): Promise<void> {
 }
 
 describe('CreateFromPicker host routing', () => {
+  it('requires an explicit click even for the project default and sends the concrete ref', async () => {
+    const onValueChange = vi.fn()
+    await renderPicker(makeRepo({ worktreeBaseRef: 'origin/main' }), {
+      requireExplicitSelection: true,
+      onValueChange
+    })
+    expect(container.querySelector('[role="combobox"]')?.textContent).toContain('Select baseline')
+    expect(onValueChange).not.toHaveBeenCalled()
+    const defaultButton = Array.from(container.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('origin/main (default)')
+    )
+    expect(defaultButton).toBeDefined()
+    await act(async () => {
+      defaultButton?.click()
+    })
+    expect(onValueChange).toHaveBeenCalledWith('origin/main')
+  })
+
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)

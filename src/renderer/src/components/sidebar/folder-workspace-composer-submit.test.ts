@@ -1,3 +1,6 @@
+import { quoteStartupArg } from '../../../../shared/tui-agent-startup-shell'
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
+const policyPrompt = (text: string) => withAgentWorktreePolicy(text, { workspaceKind: 'folder' })
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -313,7 +316,7 @@ describe('submitFolderWorkspaceCreate', () => {
         agent: 'codex',
         launchCommand: 'codex',
         followupPrompt: null,
-        draftPrompt: `Review this before starting\n\n${linkedWorkItem.url}`
+        draftPrompt: policyPrompt(`Review this before starting\n\n${linkedWorkItem.url}`)
       })
     })
   })
@@ -372,7 +375,7 @@ describe('submitFolderWorkspaceCreate', () => {
         worktreeId: folderWorkspaceKey('folder-workspace-1'),
         startup: expect.objectContaining({
           agent: 'codex',
-          draftPrompt: linkedWorkItem.url
+          draftPrompt: policyPrompt(linkedWorkItem.url)
         })
       })
     )
@@ -402,7 +405,7 @@ describe('submitFolderWorkspaceCreate', () => {
       startup: expect.objectContaining({
         agent: 'aider',
         launchCommand: 'aider',
-        followupPrompt: 'Fix the failing folder prompt flow'
+        followupPrompt: policyPrompt('Fix the failing folder prompt flow')
       })
     })
   })
@@ -590,7 +593,7 @@ describe('submitFolderWorkspaceCreate', () => {
       'folder-workspace-1',
       expect.objectContaining({
         startup: expect.objectContaining({
-          command: `claude 'Use Bob'"'"'s POSIX startup'`
+          command: `claude ${quoteStartupArg(policyPrompt("Use Bob's POSIX startup"), 'posix')}`
         })
       })
     )
@@ -639,7 +642,7 @@ describe('submitFolderWorkspaceCreate', () => {
       'folder-workspace-1',
       expect.objectContaining({
         startup: expect.objectContaining({
-          command: "claude 'Use Bob''s Windows startup'"
+          command: `claude ${quoteStartupArg(policyPrompt("Use Bob's Windows startup"), 'powershell')}`
         })
       })
     )
@@ -737,7 +740,7 @@ describe('submitFolderWorkspaceCreate native-chat launch draft', () => {
       onOpenChange: vi.fn()
     })
 
-    expect(seededDraftFor('tab-1')?.text).toBe(ISSUE_URL)
+    expect(seededDraftFor('tab-1')?.text).toBe(policyPrompt(ISSUE_URL))
   })
 
   it('mirrors an argv-prefill draft, which never lands in startupPlan.draftPrompt', async () => {
@@ -759,7 +762,7 @@ describe('submitFolderWorkspaceCreate native-chat launch draft', () => {
     const startup = mocks.activateAndRevealFolderWorkspace.mock.calls[0]?.[1]?.startup
     expect(startup?.draftPrompt).toBeUndefined()
     expect(startup?.command).toContain(ISSUE_URL)
-    expect(seededDraftFor('tab-1')?.text).toBe(ISSUE_URL)
+    expect(seededDraftFor('tab-1')?.text).toBe(policyPrompt(ISSUE_URL))
   })
 
   it('mirrors a multi-line draft into chat', async () => {
@@ -779,11 +782,13 @@ describe('submitFolderWorkspaceCreate native-chat launch draft', () => {
     expect(mocks.ensureAgentStartupInTerminal).toHaveBeenCalledWith(
       expect.objectContaining({
         startup: expect.objectContaining({
-          draftPrompt: `Reproduce on Windows first\n\n${ISSUE_URL}`
+          draftPrompt: policyPrompt(`Reproduce on Windows first\n\n${ISSUE_URL}`)
         })
       })
     )
-    expect(seededDraftFor('tab-1')?.text).toBe(`Reproduce on Windows first\n\n${ISSUE_URL}`)
+    expect(seededDraftFor('tab-1')?.text).toBe(
+      policyPrompt(`Reproduce on Windows first\n\n${ISSUE_URL}`)
+    )
   })
 
   it('does not mirror an unlinked note, which is submitted rather than drafted', async () => {
@@ -844,7 +849,7 @@ describe('folder-workspace draft: seeded set == chat-opening set', () => {
     expect(`${startup?.command ?? ''}${startup?.draftPrompt ?? ''}`).toContain(ISSUE_URL)
     expect(seededDraft != null).toBe(expectMirrored)
     if (expectMirrored) {
-      expect(seededDraft?.text).toBe(note ? `${note}\n\n${ISSUE_URL}` : ISSUE_URL)
+      expect(seededDraft?.text).toBe(policyPrompt(note ? `${note}\n\n${ISSUE_URL}` : ISSUE_URL))
     }
   })
 })

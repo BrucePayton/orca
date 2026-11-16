@@ -48,6 +48,7 @@ export async function startWorkspaceAgent(
     const worktree = state.worktreesByRepo['repo-1']?.[0]
     store.setState({ createWorktree: async () => ({ worktree }) })
     const started = await modules.workItem.launchWorkItemDirect({
+      baseBranch: 'origin/main',
       item: {
         title: 'Fix the bug',
         url: 'https://github.com/acme/repo/issues/7',

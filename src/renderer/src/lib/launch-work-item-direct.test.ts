@@ -1,3 +1,6 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
+const policyPrompt = (text: string) =>
+  withAgentWorktreePolicy(text, { baseline: 'origin/main', workspaceKind: 'git-worktree' })
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppState } from '@/store'
 import type * as TuiAgentSelectionModule from '../../../shared/tui-agent-selection'
@@ -140,6 +143,25 @@ const mockApi = {
 }
 
 describe('launchWorkItemDirect', () => {
+  it('opens baseline selection before creating an issue workspace', async () => {
+    const openModalFallback = vi.fn()
+    const result = await launchWorkItemDirect({
+      repoId: 'repo-1',
+      baseBranch: undefined,
+      launchSource: 'task_page',
+      openModalFallback,
+      item: {
+        type: 'issue',
+        number: 42,
+        title: 'Fix it',
+        url: 'https://github.com/acme/repo/issues/42'
+      }
+    })
+    expect(result).toBe(false)
+    expect(openModalFallback).toHaveBeenCalledOnce()
+    expect(mocks.createWorktree).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubGlobal('window', {
@@ -231,6 +253,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         openModalFallback: vi.fn(),
@@ -315,6 +338,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         telemetrySource: 'sidebar',
@@ -335,7 +359,7 @@ describe('launchWorkItemDirect', () => {
     expect(openModalFallback).not.toHaveBeenCalled()
     const createArgs = mocks.createWorktree.mock.calls[0]
     expect(createArgs?.[1]).toBe('issue-6933')
-    expect(createArgs?.[2]).toBeUndefined()
+    expect(createArgs?.[2]).toBe('origin/main')
     expect(createArgs?.[6]).toBe('Issue 6933')
     expect(createArgs?.[7]).toBe(6933)
     expect(createArgs?.[8]).toBeUndefined()
@@ -348,6 +372,7 @@ describe('launchWorkItemDirect', () => {
     const { launchWorkItemDirect } = await import('./launch-work-item-direct')
 
     await launchWorkItemDirect({
+      baseBranch: 'origin/main',
       repoId: 'repo-1',
       launchSource: 'task_page',
       telemetrySource: 'sidebar',
@@ -364,7 +389,7 @@ describe('launchWorkItemDirect', () => {
     expect(mocks.createWorktree).toHaveBeenCalledWith(
       'repo-1',
       'eng-42-ship-linear-parity',
-      undefined,
+      'origin/main',
       'inherit',
       undefined,
       'sidebar',
@@ -397,6 +422,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         openModalFallback: vi.fn(),
@@ -428,7 +454,7 @@ describe('launchWorkItemDirect', () => {
     ].join('\n')
     expect(buildAgentDraftLaunchPlan).toHaveBeenCalledWith({
       agent: 'claude',
-      draft: `${expectedDraft}\n`,
+      draft: policyPrompt(`${expectedDraft}\n`),
       cmdOverrides: {},
       agentArgs: '--dangerously-skip-permissions',
       agentEnv: {},
@@ -464,6 +490,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         openModalFallback: vi.fn(),
@@ -482,7 +509,7 @@ describe('launchWorkItemDirect', () => {
     expect(mocks.seedNativeChatLaunchDraft).toHaveBeenCalledWith({
       tabId: 'tab-1',
       agent: 'claude',
-      text: 'https://github.com/acme/repo/issues/12',
+      text: policyPrompt('https://github.com/acme/repo/issues/12'),
       createdAt: expect.any(Number)
     })
     expect(mocks.seedNativeChatLaunchPrompt).not.toHaveBeenCalled()
@@ -499,6 +526,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         openModalFallback: vi.fn(),
@@ -516,7 +544,9 @@ describe('launchWorkItemDirect', () => {
     expect(mocks.seedNativeChatLaunchDraft).toHaveBeenCalledWith({
       tabId: 'tab-1',
       agent: 'claude',
-      text: 'Linked Linear issue: ENG-42\nhttps://linear.app/acme/issue/ENG-42/ship-linear-parity\n',
+      text: policyPrompt(
+        'Linked Linear issue: ENG-42\nhttps://linear.app/acme/issue/ENG-42/ship-linear-parity\n'
+      ),
       createdAt: expect.any(Number)
     })
   })
@@ -527,6 +557,7 @@ describe('launchWorkItemDirect', () => {
 
     await expect(
       launchWorkItemDirect({
+        baseBranch: 'origin/main',
         repoId: 'repo-1',
         launchSource: 'task_page',
         openModalFallback: vi.fn(),
@@ -552,7 +583,7 @@ describe('launchWorkItemDirect', () => {
     expect(pasteDraftWhenAgentReady).toHaveBeenCalledWith(
       expect.objectContaining({
         tabId: 'tab-1',
-        content: 'Use this explicit user prompt.',
+        content: policyPrompt('Use this explicit user prompt.'),
         agent: 'claude',
         submit: true,
         forcePaste: true,
@@ -562,7 +593,7 @@ describe('launchWorkItemDirect', () => {
     expect(mocks.seedNativeChatLaunchPrompt).toHaveBeenCalledWith({
       tabId: 'tab-1',
       agent: 'claude',
-      text: 'Use this explicit user prompt.',
+      text: policyPrompt('Use this explicit user prompt.'),
       createdAt: expect.any(Number)
     })
     expect(mocks.seedNativeChatLaunchDraft).not.toHaveBeenCalled()
@@ -671,6 +702,7 @@ describe('launchWorkItemDirect', () => {
     })
 
     await launchWorkItemDirect({
+      baseBranch: 'origin/main',
       repoId: 'repo-ssh',
       launchSource: 'task_page',
       telemetrySource: 'sidebar',
@@ -687,7 +719,7 @@ describe('launchWorkItemDirect', () => {
     expect(mocks.store.ensureRemoteDetectedAgents).toHaveBeenCalledWith('ssh-1')
     expect(buildAgentDraftLaunchPlan).toHaveBeenCalledWith({
       agent: 'cursor',
-      draft: 'https://github.com/acme/repo/issues/77',
+      draft: policyPrompt('https://github.com/acme/repo/issues/77'),
       cmdOverrides: {},
       agentArgs: '--yolo',
       agentEnv: {},
@@ -708,7 +740,7 @@ describe('launchWorkItemDirect', () => {
       'wt-ssh',
       expect.objectContaining({
         startup: expect.objectContaining({
-          draftPrompt: 'https://github.com/acme/repo/issues/77'
+          draftPrompt: policyPrompt('https://github.com/acme/repo/issues/77')
         })
       })
     )

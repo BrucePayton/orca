@@ -1,3 +1,5 @@
+import { withAgentWorktreePolicy } from './agent-worktree-policy'
+import { quoteStartupArg } from './tui-agent-startup-shell'
 // Test-only (never imported by production code): the window-lane launch parity table for row 8
 // (an agent started together with its workspace: a work item's "start agent", the folder-workspace
 // composer). Renderer suites assert the real producer + pane send `request`; main suites feed it to
@@ -56,6 +58,26 @@ function start(
   provider: WindowProviderFacts,
   settings?: Record<string, unknown>
 ): WindowLaunchCase {
+  if (producer.kind === 'work-item' || producer.kind === 'folder-composer') {
+    const prompt = producer.kind === 'work-item' ? producer.text : producer.note
+    const guided = withAgentWorktreePolicy(prompt, {
+      ...(producer.kind === 'work-item' ? { baseline: 'origin/main' } : {}),
+      workspaceKind: workspace.kind === 'folder' ? 'folder' : 'git-worktree'
+    })
+    for (const shell of ['posix', 'powershell', 'cmd'] as const) {
+      const quoted = quoteStartupArg(prompt, shell)
+      if (request.command.includes(quoted)) {
+        request = {
+          ...request,
+          command:
+            producer.kind === 'work-item' && shell === 'cmd'
+              ? request.agentCommand
+              : request.command.replace(quoted, quoteStartupArg(guided, shell))
+        }
+        break
+      }
+    }
+  }
   return { name, row: 8, client, workspace, producer, request, provider, settings }
 }
 

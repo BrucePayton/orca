@@ -15,6 +15,11 @@ const readyInput: ComposerCreateGateInput = {
 }
 
 describe('new workspace create gates', () => {
+  it('blocks a missing baseline until the user selects one', () => {
+    expect(getQuickComposerCreateDisabled({ ...readyInput, missingBaseline: true })).toBe(true)
+    expect(getQuickComposerCreateDisabled({ ...readyInput, missingBaseline: false })).toBe(false)
+  })
+
   it('keeps quick create clickable when no repo is selected so submit can validate inline', () => {
     expect(getQuickComposerCreateDisabled({ ...readyInput, repoId: '' })).toBe(false)
   })

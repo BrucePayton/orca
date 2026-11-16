@@ -325,10 +325,7 @@ describe('registerWorktreeHandlers', () => {
     })
 
     expect(result).toEqual(expect.objectContaining({ worktree: expect.any(Object) }))
-    expect((result as CreateWorktreeResult).baseFallback).toEqual({
-      requestedRef: 'team/feature',
-      localRef: 'team/feature'
-    })
+    expect(result).not.toHaveProperty('baseFallback')
     expect(runtimeStub.getOrStartRemoteTrackingBaseRefresh).not.toHaveBeenCalled()
     expect(addWorktreeMock).toHaveBeenCalledWith(
       '/workspace/repo',
@@ -341,7 +338,7 @@ describe('registerWorktreeHandlers', () => {
     )
   })
 
-  it('uses a local branch when its missing remote-tracking base cannot refresh', async () => {
+  it('rejects a remote baseline refresh failure even when a local branch is available', async () => {
     const remoteBase = {
       remote: 'origin',
       branch: 'main',
@@ -372,27 +369,16 @@ describe('registerWorktreeHandlers', () => {
       return { stdout: 'created-sha\n', stderr: '' }
     })
 
-    const result = await handlers['worktrees:create'](null, {
-      repoId: 'repo-1',
-      name: 'offline-local-main',
-      baseBranch: 'origin/main'
-    })
-
-    expect(result).toEqual(expect.objectContaining({ worktree: expect.any(Object) }))
-    expect((result as CreateWorktreeResult).baseFallback).toEqual({
-      requestedRef: 'origin/main',
-      localRef: 'main'
-    })
-    expect(runtimeStub.getOrStartRemoteTrackingBaseRefresh).not.toHaveBeenCalled()
-    expect(addWorktreeMock).toHaveBeenCalledWith(
-      '/workspace/repo',
-      '/workspace/offline-local-main',
-      'offline-local-main',
-      'main',
-      false,
-      false,
-      {}
-    )
+    runtimeStub.getOrStartRemoteTrackingBaseRefresh.mockResolvedValue({ ok: false })
+    await expect(
+      handlers['worktrees:create'](null, {
+        repoId: 'repo-1',
+        name: 'offline-local-main',
+        baseBranch: 'origin/main'
+      })
+    ).rejects.toThrow('Could not refresh base ref')
+    expect(runtimeStub.getOrStartRemoteTrackingBaseRefresh).toHaveBeenCalled()
+    expect(addWorktreeMock).not.toHaveBeenCalled()
   })
 
   it('keeps an explicit base strict when the pre-create refresh fails', async () => {

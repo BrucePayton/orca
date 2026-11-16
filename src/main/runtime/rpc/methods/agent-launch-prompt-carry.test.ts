@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
 /**
  * Whether `agent.launch` pastes an argv agent's prompt is the runtime's report about the line it
  * typed, not the executor's guess: a carried prompt must not be pasted a second time, and an
@@ -58,7 +59,11 @@ describe('an argv agent’s launch prompt, by what the runtime reports about its
     const result = await launch({ ...EXISTING, prompt: SUBMIT }, runtime)
 
     expect(result.prompt).toEqual({ delivery: 'submit', outcome: 'handed-to-terminal' })
-    expect(sendTerminalAgentPrompt).toHaveBeenCalledWith('term_1', SUBMIT.text, expect.anything())
+    expect(sendTerminalAgentPrompt).toHaveBeenCalledWith(
+      'term_1',
+      withAgentWorktreePolicy(SUBMIT.text),
+      expect.anything()
+    )
   })
 
   it('does not paste a prompt the line already carried', async () => {
@@ -89,7 +94,7 @@ describe('an argv agent’s launch prompt, by what the runtime reports about its
     expect(result.prompt).toEqual({ delivery: 'submit', outcome: 'handed-to-terminal' })
     expect(sendTerminalAgentPrompt).toHaveBeenCalledWith(
       'term_agent_first',
-      SUBMIT.text,
+      withAgentWorktreePolicy(SUBMIT.text),
       expect.anything()
     )
   })

@@ -1,3 +1,5 @@
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
+import { quoteStartupArg } from '../../../../shared/tui-agent-startup-shell'
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -63,7 +65,9 @@ describe('submitFolderWorkspaceCreate on an Orca server', () => {
     expect(mocks.activateAndRevealFolderWorkspace).toHaveBeenCalledWith(
       'folder-workspace-1',
       expect.objectContaining({
-        startup: expect.objectContaining({ command: "claude 'Use Bob''s server startup'" })
+        startup: expect.objectContaining({
+          command: `claude ${quoteStartupArg(withAgentWorktreePolicy("Use Bob's server startup", { workspaceKind: 'folder' }), 'powershell')}`
+        })
       })
     )
   })

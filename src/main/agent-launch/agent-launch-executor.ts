@@ -1,3 +1,4 @@
+import { withAgentLaunchWorktreePolicy } from './agent-launch-worktree-policy'
 /** Structured launches create the workspace without an agent, then ask its host for chat support.
  * The host needs the created workspace to answer; a definitive refusal starts a terminal agent. */
 
@@ -52,6 +53,7 @@ export type { AgentLaunchExecution, AgentLaunchPublishedSurface } from './agent-
 export async function executeAgentLaunch(
   execution: AgentLaunchExecution
 ): Promise<AgentLaunchResult> {
+  execution = withAgentLaunchWorktreePolicy(execution)
   const { intent, runtime } = execution
   if (intent.reuseTerminal || intent.target.kind === 'create-worktree') {
     assertOpenCodeModelLaunchPreferencesAbsent(intent.agent, intent.sessionOptions)

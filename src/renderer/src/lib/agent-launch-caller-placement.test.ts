@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 // Where each call site's tab lands, whether it takes the selection, and what telemetry the launch
 // is stamped with. Placement never rides a launch wire — it is applied locally — so it has to be
 // observed on the tab the funnel creates.
@@ -193,7 +194,7 @@ describe('agent launch caller placement and telemetry', () => {
 
     expect(queuedStartupPayload(store)?.initialAgentStatus).toEqual({
       agent: 'command-code',
-      prompt: 'fix the spinner'
+      prompt: withAgentWorktreePolicy('fix the spinner')
     })
   })
 

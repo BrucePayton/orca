@@ -20247,5 +20247,8 @@
       "preparingLabel": "正在准备更新",
       "preparingAriaLabel": "正在准备更新。点击展开。"
     }
-  }
+  },
+  "workspace.baseline.label": "基线分支（必选）",
+  "workspace.baseline.required": "请先选择基线分支，再创建工作区。",
+  "workspace.baseline.select": "选择基线分支…"
 }

@@ -1,3 +1,5 @@
+import { quoteStartupArg } from '../../../shared/tui-agent-startup-shell'
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 // Windows/WSL shell-quoting coverage for launchAgentInNewTab, split from
 // launch-agent-in-new-tab.test.ts to keep both files within the lines budget.
 
@@ -184,7 +186,7 @@ describe('launchAgentInNewTab Windows shell quoting', () => {
 
     expect(mockCreateWebRuntimeAgentSessionTerminal).toHaveBeenCalledWith(
       expect.objectContaining({
-        promptAfterReady: prompt,
+        promptAfterReady: withAgentWorktreePolicy(prompt),
         submitPrompt: false,
         forcePromptPaste: true
       })
@@ -206,7 +208,7 @@ describe('launchAgentInNewTab Windows shell quoting', () => {
 
     expect(queuedStartups()).toContainEqual(
       expect.objectContaining({
-        command: "claude '--dangerously-skip-permissions' --prefill 'review Bob''s change'"
+        command: `claude '--dangerously-skip-permissions' --prefill ${quoteStartupArg(withAgentWorktreePolicy("review Bob's change"), 'powershell')}`
       })
     )
   })
@@ -262,7 +264,7 @@ describe('launchAgentInNewTab Windows shell quoting', () => {
 
     expect(queuedStartups()).toContainEqual(
       expect.objectContaining({
-        command: 'codex "--model" "gpt-5" "fix the spinner"',
+        command: `codex "--model" "gpt-5" ${quoteStartupArg(withAgentWorktreePolicy('fix the spinner'), 'cmd')}`,
         agentArgsOverride: '--model gpt-5'
       })
     )
@@ -283,7 +285,7 @@ describe('launchAgentInNewTab Windows shell quoting', () => {
 
     expect(queuedStartups()).toContainEqual(
       expect.objectContaining({
-        command: `claude '--dangerously-skip-permissions' --prefill 'review Bob'"'"'s change'`
+        command: `claude '--dangerously-skip-permissions' --prefill ${quoteStartupArg(withAgentWorktreePolicy("review Bob's change"), 'posix')}`
       })
     )
   })
@@ -337,7 +339,7 @@ describe('launchAgentInNewTab Windows shell quoting', () => {
 
     expect(queuedStartups()).toContainEqual(
       expect.objectContaining({
-        command: `claude '--dangerously-skip-permissions' --prefill 'review Bob'"'"'s change'`
+        command: `claude '--dangerously-skip-permissions' --prefill ${quoteStartupArg(withAgentWorktreePolicy("review Bob's change"), 'posix')}`
       })
     )
   })

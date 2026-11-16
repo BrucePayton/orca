@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 import { useAppStore } from '@/store'
 import type { AgentStartupPlan } from '@/lib/tui-agent-startup'
 import { planLaunchAgentStartupPrompt } from '@/lib/launch-agent-startup-prompt-plan'
@@ -145,10 +146,18 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
       ? agentArgs
       : resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
   const agentEnv = resolveTuiAgentLaunchEnv(agent, store.settings?.agentDefaultEnv)
-  const trimmedPrompt = prompt?.trim() ?? ''
+  const workspaceKind = workspaceKindForWorktreeId(worktreeId)
+  const workspace = store.getKnownWorktreeById?.(worktreeId)
+  const taskPrompt = prompt?.trim() ?? ''
+  const trimmedPrompt =
+    taskPrompt && workspaceKind !== 'floating'
+      ? withAgentWorktreePolicy(taskPrompt, {
+          baseline: workspace && 'baseRef' in workspace ? workspace.baseRef : undefined,
+          workspaceKind
+        })
+      : taskPrompt
   const hasPrompt = trimmedPrompt.length > 0
   const isFollowupPath = TUI_AGENT_CONFIG[agent].promptInjectionMode === 'stdin-after-start'
-  const workspaceKind = workspaceKindForWorktreeId(worktreeId)
   // Why: a followup-path agent gets its prompt pasted unsubmitted after start, so route it as a draft.
   const routePromptDelivery =
     hasPrompt && isFollowupPath && promptDelivery === 'auto-submit' ? 'draft' : promptDelivery

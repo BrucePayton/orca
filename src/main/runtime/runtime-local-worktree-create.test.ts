@@ -553,6 +553,14 @@ describe('runtime create PR conflict probe', () => {
     expect(mocks.consume).toHaveBeenCalledWith(expect.objectContaining({ branch: 'app-3' }))
   })
 
+  it('does not create from a cached remote ref when refresh fails', async () => {
+    mocks.remoteBase.mockResolvedValue(remoteTrackingBase)
+    mocks.refresh.mockResolvedValue({ ok: false })
+    await expect(createWorktree()).rejects.toThrow('Could not refresh base ref')
+    expect(mocks.consume).not.toHaveBeenCalled()
+    expect(mocks.add).not.toHaveBeenCalled()
+  })
+
   it('reports the naming failure when the started base fetch also fails', async () => {
     mocks.remoteBase.mockResolvedValue(remoteTrackingBase)
     mocks.refresh.mockRejectedValue(new Error('offline'))

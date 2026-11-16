@@ -33,6 +33,7 @@ type QuickCreationExecutionInput = Pick<
 >
 
 import { useCallback } from 'react'
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { WorktreeCreationRequest } from '@/lib/pending-worktree-creation'
 import { useAppStore } from '@/store'
@@ -120,8 +121,18 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
 
       const promptLinkedWorkItem = agent === null ? null : submitLinkedWorkItem
 
-      const { prompt: quickPrompt, draftPrompt: quickDraftPrompt } =
-        resolveQuickCreateLinkedWorkItemPrompt(promptLinkedWorkItem, trimmedNote)
+      const linkedPrompt = resolveQuickCreateLinkedWorkItemPrompt(promptLinkedWorkItem, trimmedNote)
+      const policyContext = {
+        baseline: submitCompareBaseRef ?? submitBaseBranch,
+        workspaceKind: selectedRepoIsGit ? ('git-worktree' as const) : ('folder' as const)
+      }
+      const quickPrompt = agent
+        ? withAgentWorktreePolicy(linkedPrompt.prompt, policyContext)
+        : linkedPrompt.prompt
+      const quickDraftPrompt =
+        agent && linkedPrompt.draftPrompt
+          ? withAgentWorktreePolicy(linkedPrompt.draftPrompt, policyContext)
+          : linkedPrompt.draftPrompt
 
       const {
         startupPlan,

@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 import { describe, expect, it, vi } from 'vitest'
 import type { HeadlessAutomationDispatcher } from './headless-dispatch'
 import type { AutomationRunTerminalObserver } from './run-completion-watcher'
@@ -123,7 +124,7 @@ describe('headless automation dispatch with extra agent args', () => {
 
     expect(runtime.launchAgentTerminal).toHaveBeenCalledWith('id:wt-1', {
       agent: 'claude',
-      prompt: 'go',
+      prompt: withAgentWorktreePolicy('go'),
       title: 'Nightly',
       extraAgentArgs: '--model opus'
     })

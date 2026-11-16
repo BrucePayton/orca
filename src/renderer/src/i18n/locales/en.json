@@ -20377,5 +20377,8 @@
       "errorTitle": "Space hit an error.",
       "errorDescription": "Close and reopen Space to try again."
     }
-  }
+  },
+  "workspace.baseline.label": "Baseline (required)",
+  "workspace.baseline.required": "Select a baseline branch before creating a workspace.",
+  "workspace.baseline.select": "Select baseline…"
 }

@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
 import '../unused-default-rpc-methods.test-fixture'
 import { describe, expect, it, vi } from 'vitest'
 import { RpcDispatcher } from '../dispatcher'
@@ -151,7 +152,7 @@ describe('worktree.create with a startup agent', () => {
     const args = createManagedWorktree.mock.calls[0][0]
     expect(args).toMatchObject({
       startupAgent: 'claude',
-      startupPrompt: 'fix the login bug',
+      startupPrompt: withAgentWorktreePolicy('fix the login bug'),
       startupLaunchSource: 'cli',
       activate: false
     })
@@ -179,7 +180,7 @@ describe('worktree.create with a startup agent', () => {
     expect(response).not.toHaveProperty('result.agentTerminalHandle')
     const args = createManagedWorktree.mock.calls[0][0]
     expect(args).toMatchObject({
-      startupDraft: 'https://github.com/acme/app/issues/88',
+      startupDraft: withAgentWorktreePolicy('https://github.com/acme/app/issues/88'),
       createdWithAgent: 'codex',
       linkedIssue: 88,
       activate: true

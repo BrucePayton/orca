@@ -224,6 +224,7 @@ describe('registerWorktreeHandlers', () => {
       ref: 'refs/remotes/origin/main',
       base: 'origin/main'
     })
+    runtimeStub.hasRemoteTrackingRef.mockResolvedValue(true)
     gitExecFileAsyncMock.mockResolvedValue({ stdout: 'abc123\n', stderr: '' })
     // A persisted base that differs from the detected default also drives the usability probe.
     store.getRepo.mockReturnValue({ ...harnessRepo, worktreeBaseRef: 'custom-base' })
@@ -244,6 +245,45 @@ describe('registerWorktreeHandlers', () => {
 
     expectEveryGitCallRoutedTo('Ubuntu')
   })
+
+  it.each([
+    { refreshed: false, hasRef: true, error: 'Could not refresh base ref' },
+    { refreshed: true, hasRef: false, error: 'was not found after fetching' }
+  ])(
+    'stops WSL creation when the remote baseline is not verified: $error',
+    async ({ refreshed, hasRef, error }) => {
+      mockSelectedWslProjectRuntime()
+      const base = {
+        remote: 'origin',
+        branch: 'main',
+        ref: 'refs/remotes/origin/main',
+        base: 'origin/main'
+      }
+      runtimeStub.resolveRemoteTrackingBase.mockResolvedValue(base)
+      runtimeStub.hasRemoteTrackingRef.mockResolvedValue(hasRef)
+      runtimeStub.getOrStartRemoteTrackingBaseRefresh.mockResolvedValue({ ok: refreshed })
+      gitExecFileAsyncMock.mockImplementation(async (args: string[]) => ({
+        stdout:
+          args[0] === 'rev-parse' && args.some((arg) => arg.includes('origin/main'))
+            ? ''
+            : 'cached-sha\n',
+        stderr: ''
+      }))
+      await expect(
+        handlers['worktrees:create'](null, {
+          repoId: 'repo-1',
+          name: 'baseline-check',
+          baseBranch: 'origin/main'
+        })
+      ).rejects.toThrow(error)
+      expect(addWorktreeMock).not.toHaveBeenCalled()
+      expect(runtimeStub.getOrStartRemoteTrackingBaseRefresh).toHaveBeenCalledWith(
+        '/workspace/repo',
+        base,
+        { wslDistro: 'Ubuntu' }
+      )
+    }
+  )
 
   // Was "routes fork push target setup ... through create": create used to mint the
   // fork remote (and route it to the selected WSL distro) unconditionally. It now

@@ -10,19 +10,19 @@ describe('resolveWorktreeCreateBaseBranch', () => {
     ).resolves.toBe('origin/feature')
   })
 
-  it('omits repo defaults so backend create owns base selection', async () => {
+  it('requires a baseline instead of letting the backend guess', async () => {
     await expect(
       resolveWorktreeCreateBaseBranch({
         explicitBaseBranch: undefined
       })
-    ).resolves.toBeUndefined()
+    ).rejects.toThrow('Select a baseline branch')
   })
 
-  it('omits blank explicit selections', async () => {
+  it('rejects blank baseline selections', async () => {
     await expect(
       resolveWorktreeCreateBaseBranch({
         explicitBaseBranch: '   '
       })
-    ).resolves.toBeUndefined()
+    ).rejects.toThrow('Select a baseline branch')
   })
 })

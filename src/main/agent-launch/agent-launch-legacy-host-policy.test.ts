@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 import { describe, expect, it, vi } from 'vitest'
 import { executeAgentLaunch, type AgentLaunchExecution } from './agent-launch-executor'
 import { decideAgentLaunchMode } from './agent-launch-mode'
@@ -79,7 +80,7 @@ describe('the legacy-host prompt policy', () => {
     const args = factory.createWorktree.mock.calls[0][0]
     expect(args).toMatchObject({
       startupAgent: 'aider',
-      legacyPrompt: { text: 'fix the bug', delivery: 'submit' }
+      legacyPrompt: { text: withAgentWorktreePolicy('fix the bug'), delivery: 'submit' }
     })
     expect(args).not.toHaveProperty('startupPrompt')
     expect(result.outcome).toEqual({ kind: 'terminal', handle: 'term_agent' })

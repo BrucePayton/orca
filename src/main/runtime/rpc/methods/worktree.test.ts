@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../../shared/agent-worktree-policy'
 import '../unused-default-rpc-methods.test-fixture'
 import { describe, expect, it, vi } from 'vitest'
 import { RpcDispatcher } from '../dispatcher'
@@ -37,10 +38,7 @@ describe('worktree RPC methods', () => {
     const dispatcher = new RpcDispatcher({ runtime, methods: WORKTREE_METHODS })
 
     const response = await dispatcher.dispatch(
-      makeRequest('worktree.activate', {
-        worktree: 'id:wt-1',
-        notifyClients: false
-      })
+      makeRequest('worktree.activate', { worktree: 'id:wt-1', notifyClients: false })
     )
 
     expect(response).toMatchObject({ ok: true })
@@ -616,7 +614,7 @@ describe('worktree RPC methods', () => {
         activate: true,
         createdWithAgent: 'codex',
         startup: undefined,
-        startupDraft: 'https://github.com/stablyai/orca/issues/123'
+        startupDraft: withAgentWorktreePolicy('https://github.com/stablyai/orca/issues/123')
       })
     )
   })

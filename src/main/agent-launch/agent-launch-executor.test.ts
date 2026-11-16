@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 /**
  * The executor's ordering contract, which is the defect this module exists to remove.
  *
@@ -229,7 +230,7 @@ describe('a structured launch that creates its own worktree', () => {
     expect(h.createStructuredSession).not.toHaveBeenCalled()
     expect(h.createTerminalAgent).toHaveBeenCalledWith(
       expect.objectContaining({
-        startupPrompt: 'continue my task'
+        startupPrompt: withAgentWorktreePolicy('continue my task')
       })
     )
     expect(result.outcome).toEqual({ kind: 'terminal', handle: 'term_1' })
@@ -454,7 +455,7 @@ describe('the prompt receipt', () => {
     expect(h.deliverStructuredPrompt).toHaveBeenCalledWith({
       sessionId: 'sess-1',
       fence: 4,
-      prompt: SUBMIT
+      prompt: { ...SUBMIT, text: withAgentWorktreePolicy(SUBMIT.text) }
     })
   })
 
@@ -497,7 +498,7 @@ describe('delivering a launch prompt to a terminal agent', () => {
     expect(result.outcome.kind).toBe('terminal')
     expect(result.prompt).toEqual({ delivery: 'submit', outcome: 'handed-to-terminal' })
     expect(h.createTerminalAgent.mock.calls[0]?.[0]).toMatchObject({
-      startupPrompt: 'do the thing'
+      startupPrompt: withAgentWorktreePolicy('do the thing')
     })
     // The text was in the process's argv at exec time; a paste on top would be a second copy.
     expect(h.deliverTerminalPrompt).not.toHaveBeenCalled()
@@ -516,7 +517,7 @@ describe('delivering a launch prompt to a terminal agent', () => {
       handle: 'term_1',
       agent: 'aider',
       freshLaunch: true,
-      prompt: SUBMIT
+      prompt: { ...SUBMIT, text: withAgentWorktreePolicy(SUBMIT.text) }
     })
     // Folding it into argv would have appended it as an argument the CLI does not accept.
     expect(h.createTerminalAgent.mock.calls[0]?.[0]).not.toHaveProperty('startupPrompt')
@@ -530,7 +531,7 @@ describe('delivering a launch prompt to a terminal agent', () => {
     expect(result.prompt).toEqual({ delivery: 'submit', outcome: 'handed-to-terminal' })
     expect(h.createWorktree.mock.calls[0]?.[0]).toMatchObject({
       startupAgent: 'claude',
-      startupPrompt: 'do the thing'
+      startupPrompt: withAgentWorktreePolicy('do the thing')
     })
     expect(h.deliverTerminalPrompt).not.toHaveBeenCalled()
   })
@@ -545,13 +546,13 @@ describe('delivering a launch prompt to a terminal agent', () => {
     expect(result.prompt).toEqual({ delivery: 'submit', outcome: 'handed-to-terminal' })
     // Offered to the launch command; the surface, not the executor, decided it did not ride.
     expect(h.createTerminalAgent.mock.calls[0]?.[0]).toMatchObject({
-      startupPrompt: 'do the thing'
+      startupPrompt: withAgentWorktreePolicy('do the thing')
     })
     expect(h.deliverTerminalPrompt).toHaveBeenCalledWith({
       handle: 'term_1',
       agent: 'claude',
       freshLaunch: true,
-      prompt: SUBMIT
+      prompt: { ...SUBMIT, text: withAgentWorktreePolicy(SUBMIT.text) }
     })
   })
 
@@ -564,7 +565,7 @@ describe('delivering a launch prompt to a terminal agent', () => {
       handle: 'term_agent_first',
       agent: 'claude',
       freshLaunch: true,
-      prompt: SUBMIT
+      prompt: { ...SUBMIT, text: withAgentWorktreePolicy(SUBMIT.text) }
     })
   })
 

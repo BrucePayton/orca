@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -377,7 +378,7 @@ describe('structured chat adoption guard on the launch path', () => {
     expect(mockCreateTab).toHaveBeenCalledOnce()
     expect(mockPasteDraftWhenAgentReady).toHaveBeenCalledOnce()
     expect(mockPasteDraftWhenAgentReady).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'start this task' })
+      expect.objectContaining({ content: withAgentWorktreePolicy('start this task') })
     )
     // Nothing of a chat was committed: no launch, intent, tab, or message about it.
     expect(mockCreateStructuredCodexSessionLaunchIntent).not.toHaveBeenCalled()

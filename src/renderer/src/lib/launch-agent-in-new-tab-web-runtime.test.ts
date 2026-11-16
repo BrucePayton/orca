@@ -1,3 +1,5 @@
+import { quoteStartupArg } from '../../../shared/tui-agent-startup-shell'
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -141,7 +143,7 @@ describe('launchAgentInNewTab paired web runtime', () => {
       activate: true,
       agentSessionKind: 'fresh',
       launchAgent: 'codex',
-      command: "codex '--model' 'gpt-5' '--reasoning-effort' 'high' 'fix the spinner'",
+      command: `codex '--model' 'gpt-5' '--reasoning-effort' 'high' ${quoteStartupArg(withAgentWorktreePolicy('fix the spinner'), 'posix')}`,
       env: { CODEX_PROFILE: 'captured' },
       launchConfig: {
         agentCommand: "codex '--model' 'gpt-5' '--reasoning-effort' 'high'",
@@ -149,7 +151,7 @@ describe('launchAgentInNewTab paired web runtime', () => {
         agentEnv: { CODEX_PROFILE: 'captured' }
       },
       startupCommandDelivery: 'shell-ready',
-      prompt: 'fix the spinner',
+      prompt: withAgentWorktreePolicy('fix the spinner'),
       promptDelivery: 'auto-submit',
       viewMode: 'terminal'
     })

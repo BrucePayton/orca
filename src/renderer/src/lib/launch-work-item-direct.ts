@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import {
@@ -90,6 +91,10 @@ export async function launchWorkItemDirect(args: LaunchWorkItemDirectArgs): Prom
       : null
   const itemType = githubIdentity?.type ?? item.type
   const itemNumber = githubIdentity?.number ?? item.number
+  if (repo.kind !== 'folder' && !baseBranch?.trim() && itemType !== 'pr') {
+    openModalFallback()
+    return false
+  }
   const repoProjectRuntime = repoConnectionId
     ? undefined
     : getLocalRepoProjectExecutionRuntimeContext(store, repoId, CLIENT_PLATFORM)
@@ -170,7 +175,13 @@ export async function launchWorkItemDirect(args: LaunchWorkItemDirectArgs): Prom
   let draftLaunchedNatively = false
   let plan: AgentSessionLaunchPlan | null = null
   let structuredLaunchCompleted = false
-  const draftContent = await getDirectWorkItemDraftContent(item, repoConnectionId)
+  const draftContent = withAgentWorktreePolicy(
+    await getDirectWorkItemDraftContent(item, repoConnectionId),
+    {
+      baseline: resolvedBaseBranch,
+      workspaceKind: repo.kind === 'folder' ? 'folder' : 'git-worktree'
+    }
+  )
   let startupPlanFailed = false
   try {
     const result = await store.createWorktree(

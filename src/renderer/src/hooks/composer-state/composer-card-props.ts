@@ -122,6 +122,12 @@ export function buildComposerCardProps(state: ComposerModel) {
     sourceIntentBlocksCreate,
     requiresExplicitSetupChoice,
     hasSetupDecision: Boolean(setupDecision),
+    missingBaseline:
+      selectedRepoIsGit &&
+      !baseBranch?.trim() &&
+      smartNameSelection?.kind !== 'github-pr' &&
+      smartNameSelection?.kind !== 'gitlab-mr' &&
+      smartNameSelection?.kind !== 'branch',
     selectedRepoRequiresConnection,
     sparseError
   })

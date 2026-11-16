@@ -319,7 +319,7 @@ describe('OrcaRuntimeService', () => {
         return { stdout: 'base-sha\n', stderr: '' }
       }
       if (args.includes('fetch')) {
-        throw new Error('network unavailable')
+        return { stdout: '', stderr: '' }
       }
       return { stdout: '', stderr: '' }
     })

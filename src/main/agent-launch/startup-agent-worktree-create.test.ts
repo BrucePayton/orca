@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../shared/agent-worktree-policy'
 import { describe, expect, it, vi } from 'vitest'
 import type { CreateWorktreeResult } from '../../shared/worktree/create-types'
 import type { RuntimeManagedWorktreeCreateArgs } from '../runtime/runtime-managed-worktree-create-types'
@@ -96,10 +97,12 @@ describe('createWorktreeWithStartupAgent', () => {
     const result = await create(args)
 
     expect(result).toBe(created)
-    // Exactly the request: no field dropped, and nothing `worktree.create` never sent — no typed-line
-    // measuring (`onStartupPromptCarry`), no waiting on setup before the reply.
+    // Preserve create options while attaching the workflow guidance to the prompt.
     expect(runtime.createManagedWorktree).toHaveBeenCalledTimes(1)
-    expect(runtime.createManagedWorktree).toHaveBeenCalledWith(args)
+    expect(runtime.createManagedWorktree).toHaveBeenCalledWith({
+      ...args,
+      startupPrompt: withAgentWorktreePolicy(args.startupPrompt)
+    })
     expect(runtime.getStructuredAgentSessionCreateSupport).not.toHaveBeenCalled()
   })
 
@@ -109,7 +112,10 @@ describe('createWorktreeWithStartupAgent', () => {
 
     await create(args)
 
-    expect(runtime.createManagedWorktree).toHaveBeenCalledWith(args)
+    expect(runtime.createManagedWorktree).toHaveBeenCalledWith({
+      ...args,
+      startupPrompt: withAgentWorktreePolicy(args.startupPrompt)
+    })
   })
 
   it('treats a blank prompt as none, which the create launches bare either way', async () => {
@@ -137,7 +143,7 @@ describe('createWorktreeWithStartupAgent', () => {
     // for, and a `startupAgent` would override the draft and start the agent with no URL in it.
     expect(runtime.createManagedWorktree).toHaveBeenCalledWith({
       ...request,
-      startupDraft: draft,
+      startupDraft: withAgentWorktreePolicy(draft),
       startupDraftAgent: 'codex'
     })
   })
@@ -150,7 +156,7 @@ describe('createWorktreeWithStartupAgent', () => {
     expect(runtime.resolveStartupDraftAgent).toHaveBeenCalledWith(expect.anything(), 'claude')
     expect(runtime.createManagedWorktree).toHaveBeenCalledWith({
       ...FULL,
-      startupDraft: 'https://x/1',
+      startupDraft: withAgentWorktreePolicy('https://x/1'),
       startupDraftAgent: 'claude'
     })
   })

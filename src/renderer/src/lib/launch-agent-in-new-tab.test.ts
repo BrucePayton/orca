@@ -1,3 +1,5 @@
+import { quoteStartupArg } from '../../../shared/tui-agent-startup-shell'
+import { withAgentWorktreePolicy as withPolicy } from '../../../shared/agent-worktree-policy'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setLocalRuntimeCapabilitiesForTests } from '@/runtime/local-runtime-capabilities'
 import { toAppSshPtyId } from '../../../shared/ssh-pty-id'
@@ -286,7 +288,7 @@ describe('launchAgentInNewTab', () => {
     expect(mockSeedNativeChatLaunchPrompt).toHaveBeenCalledWith({
       tabId: 'tab-1',
       agent: 'codex',
-      text: 'large generated prompt',
+      text: withPolicy('large generated prompt'),
       createdAt: expect.any(Number)
     })
     expect(mockSetTabViewMode).not.toHaveBeenCalled()
@@ -318,7 +320,7 @@ describe('launchAgentInNewTab', () => {
     expect(mockSeedNativeChatLaunchPrompt).toHaveBeenCalledWith({
       tabId: 'tab-1',
       agent: 'grok',
-      text: 'large generated prompt',
+      text: withPolicy('large generated prompt'),
       createdAt: expect.any(Number)
     })
   })
@@ -367,7 +369,7 @@ describe('launchAgentInNewTab', () => {
       expect.objectContaining({
         tabId: 'tab-1',
         agent: 'claude',
-        text: 'https://github.com/o/r/issues/12'
+        text: withPolicy('https://github.com/o/r/issues/12')
       })
     )
     expect(mockCreateTab.mock.calls[0]?.[3]).not.toHaveProperty('viewMode')
@@ -393,7 +395,7 @@ describe('launchAgentInNewTab', () => {
     })
 
     expect(mockSeedNativeChatLaunchDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ tabId: 'tab-1', agent: 'claude', text: prompt })
+      expect.objectContaining({ tabId: 'tab-1', agent: 'claude', text: withPolicy(prompt) })
     )
     expect(mockCreateTab.mock.calls[0]?.[3]).not.toHaveProperty('viewMode')
   })
@@ -517,11 +519,11 @@ describe('launchAgentInNewTab', () => {
     expect(mockCreateWebRuntimeAgentSessionTerminalWithLaunchDraft).toHaveBeenCalledWith(
       expect.objectContaining({
         launchAgent: 'claude',
-        prompt: 'review before sending',
+        prompt: withPolicy('review before sending'),
         promptDelivery: 'draft',
         agentArgs: '--permission-mode plan',
         agent: 'claude',
-        launchDraft: 'review before sending'
+        launchDraft: withPolicy('review before sending')
       })
     )
     expect(
@@ -612,10 +614,10 @@ describe('launchAgentInNewTab', () => {
 
     expect(queuedStartups()).toContainEqual(
       expect.objectContaining({
-        command: "command-code --trust '--yolo' 'fix the spinner'",
+        command: `command-code --trust '--yolo' ${quoteStartupArg(withPolicy('fix the spinner'), 'posix')}`,
         initialAgentStatus: {
           agent: 'command-code',
-          prompt: 'fix the spinner'
+          prompt: withPolicy('fix the spinner')
         }
       })
     )
@@ -657,7 +659,7 @@ describe('launchAgentInNewTab', () => {
     expect(mockPasteDraftWhenAgentReady).toHaveBeenCalledWith(
       expect.objectContaining({
         tabId: 'tab-1',
-        content: prompt,
+        content: withPolicy(prompt),
         agent: 'claude',
         submit: false,
         forcePaste: true
@@ -723,7 +725,7 @@ describe('launchAgentInNewTab', () => {
     expect(mockPasteDraftWhenAgentReady).toHaveBeenCalledWith(
       expect.objectContaining({
         tabId: 'tab-1',
-        content: 'large generated prompt',
+        content: withPolicy('large generated prompt'),
         agent: 'command-code',
         submit: true,
         forcePaste: true
@@ -733,7 +735,7 @@ describe('launchAgentInNewTab', () => {
       `tab-1:${LEAF_ID}`,
       {
         state: 'working',
-        prompt: 'large generated prompt',
+        prompt: withPolicy('large generated prompt'),
         agentType: 'command-code',
         // Why: seeded from Orca's own prompt delivery, not a provider hook (STA-4293).
         observation: expect.objectContaining({ origin: 'process', kind: 'transition' })
@@ -896,9 +898,7 @@ describe('launchAgentInNewTab', () => {
     })
 
     expect(queuedStartups()).toContainEqual(
-      expect.objectContaining({
-        command: "codex '--model' 'gpt-5.5'"
-      })
+      expect.objectContaining({ command: "codex '--model' 'gpt-5.5'" })
     )
   })
 })

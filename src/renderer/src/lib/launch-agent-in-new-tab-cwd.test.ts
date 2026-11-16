@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockQueueTabInitialCwd = vi.fn()
@@ -126,9 +127,9 @@ describe('launchAgentInNewTab initial cwd', () => {
       expect.objectContaining({
         worktreeId: 'wt-1',
         environmentId: 'web-runtime',
-        prompt: 'continue the unfinished task',
+        prompt: withAgentWorktreePolicy('continue the unfinished task'),
         promptDelivery: 'submit-after-ready',
-        pastePromptAfterReady: 'continue the unfinished task',
+        pastePromptAfterReady: withAgentWorktreePolicy('continue the unfinished task'),
         submitPastedPrompt: true
       })
     )

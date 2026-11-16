@@ -1,3 +1,4 @@
+import { withAgentWorktreePolicy } from '../../../shared/agent-worktree-policy'
 // Which surface each production call site resolves to, and what aborts the open.
 // Split from the command/prompt/placement files by responsibility; the profile table they share
 // lives in agent-launch-caller-profiles-test-harness.ts.
@@ -244,7 +245,7 @@ describe('agent launch caller routing', () => {
         agent: 'claude',
         worktreeId: 'wt-1',
         environmentId: 'web-runtime',
-        prompt: 'fix the flaky test',
+        prompt: withAgentWorktreePolicy('fix the flaky test'),
         agentArgs: '--model sonnet'
       })
     )
@@ -283,7 +284,7 @@ describe('agent launch caller routing', () => {
     const { pasteDraftWhenAgentReady } = await import('@/lib/agent-paste-draft')
     expect(pasteDraftWhenAgentReady).toHaveBeenCalledOnce()
     expect(pasteDraftWhenAgentReady).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'fix the flaky test' })
+      expect.objectContaining({ content: withAgentWorktreePolicy('fix the flaky test') })
     )
     // On this machine the terminal opening is the answer; no notice names a server.
     expect(mockToastInfo).not.toHaveBeenCalled()
