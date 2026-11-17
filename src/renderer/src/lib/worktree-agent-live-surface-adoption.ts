@@ -1,6 +1,7 @@
 import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../shared/layout-owner-switch'
 import { parsePaneKey } from '../../../shared/stable-pane-id'
 import { worktreeIdsEqual } from '../../../shared/worktree/id'
+import { hasClosedTerminalTabRecord } from '../../../shared/closed-terminal-tab-tombstones'
 import type { useAppStore } from '@/store'
 import { layoutFramesHoldTerminalPane } from '@/runtime/layout-frame-terminal-panes'
 import { resolveTerminalTabPtyOwnership } from './terminal-tab-for-pty-id'
@@ -12,6 +13,7 @@ import type {
 export type LiveSurfaceAdoptionStore = Pick<
   ReturnType<typeof useAppStore.getState>,
   | 'createTab'
+  | 'closedTerminalTabTombstonesByTabId'
   | 'ptyIdsByTabId'
   | 'setTabLayout'
   | 'tabsByWorktree'
@@ -190,6 +192,19 @@ export async function adoptLiveWorkspacePtySurfaces(
     // Why: only the execution host can prove a live PTY is unowned, and minting
     // on anything weaker forks a running agent onto a second empty surface.
     if (!owner) {
+      declinedPtyIds.push(ptyId)
+      continue
+    }
+    const recordedTabId = 'unowned' in owner ? owner.recorded?.tabId : owner.tabId
+    // A surviving PTY must not resurrect a closed tab under a fresh id on every activation.
+    if (
+      recordedTabId &&
+      hasClosedTerminalTabRecord(
+        getState().closedTerminalTabTombstonesByTabId,
+        recordedTabId,
+        worktreeId
+      )
+    ) {
       declinedPtyIds.push(ptyId)
       continue
     }

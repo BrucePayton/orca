@@ -147,6 +147,7 @@ function testDeps(args: {
   })
   const store = {
     createTab,
+    closedTerminalTabTombstonesByTabId: {},
     ptyIdsByTabId,
     setTabLayout,
     tabsByWorktree,

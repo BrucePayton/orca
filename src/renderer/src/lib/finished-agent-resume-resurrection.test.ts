@@ -95,6 +95,22 @@ describe('a finished local agent', () => {
     ).toBe(false)
   })
 
+  it('promotes a completed Codex anchor to a resumable quit record', () => {
+    seedLiveLocalCodexPane()
+    reportTurnFinished()
+
+    useAppStore.getState().captureAllSleepingAgentSessions('quit')
+
+    const record = useAppStore.getState().sleepingAgentSessionsByPaneKey[PANE_KEY]
+    expect(record).toMatchObject({
+      agent: 'codex',
+      providerSession: { key: 'session_id', id: SESSION_ID },
+      state: 'done',
+      origin: 'quit'
+    })
+    expect(activationTreatsNoteAsFinished(record!)).toBe(false)
+  })
+
   it('keeps its resume identity and is recorded as completed history', () => {
     seedLiveLocalCodexPane()
 
