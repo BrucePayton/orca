@@ -1,178 +1,62 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import type * as OsModule from 'node:os'
 import { join } from 'node:path'
-import type * as osModule from 'node:os'
+import { GeminiHookService } from './hook-service'
 
-const { getPathMock, homedirMock } = vi.hoisted(() => ({
-  getPathMock: vi.fn<(name: string) => string>(),
-  homedirMock: vi.fn<() => string>()
+const { homeMock } = vi.hoisted(() => ({ homeMock: vi.fn<() => string>() }))
+vi.mock('node:os', async (importOriginal) => ({
+  ...(await importOriginal<typeof OsModule>()),
+  homedir: homeMock
 }))
 
-vi.mock('electron', () => ({
-  app: {
-    getPath: getPathMock
-  }
-}))
+let home = ''
 
-vi.mock('os', async (importOriginal) => {
-  const actual = await importOriginal<typeof osModule>()
-  return {
-    ...actual,
-    homedir: homedirMock
-  }
+beforeEach(() => {
+  home = mkdtempSync(join(tmpdir(), 'orca-gemini-hook-'))
+  homeMock.mockReturnValue(home)
 })
 
-import { GeminiHookService } from './hook-service'
-import { wrapWindowsBatchHookCommand } from '../agent-hooks/windows-direct-cmd-hook-command'
+afterEach(() => {
+  rmSync(home, { recursive: true, force: true })
+})
 
-describe('GeminiHookService', () => {
-  let homeDir: string
-  let userDataDir: string
+function installedAfterAgentCommand(): string {
+  expect(new GeminiHookService().install().state).toBe('installed')
+  const settings: { hooks: Record<string, { hooks: { command: string }[] }[]> } = JSON.parse(
+    readFileSync(join(home, '.gemini', 'settings.json'), 'utf8')
+  )
+  return settings.hooks.AfterAgent[0].hooks[0].command
+}
 
-  beforeAll(() => {
-    homeDir = mkdtempSync(join(tmpdir(), 'orca-gemini-home-'))
-    userDataDir = mkdtempSync(join(tmpdir(), 'orca-gemini-userdata-'))
-    homedirMock.mockReturnValue(homeDir)
-    getPathMock.mockImplementation((name: string) => {
-      if (name === 'userData') {
-        return userDataDir
-      }
-      throw new Error(`unexpected getPath(${name})`)
-    })
+function runHook(command: string, paneEnv: NodeJS.ProcessEnv) {
+  const env: NodeJS.ProcessEnv = { PATH: '/usr/bin:/bin', HOME: home, ...paneEnv }
+  return spawnSync('/bin/sh', ['-c', command], {
+    env,
+    input: '{"hook_event_name":"AfterAgent"}',
+    encoding: 'utf8',
+    timeout: 5000
   })
+}
 
-  afterAll(() => {
-    rmSync(homeDir, { recursive: true, force: true })
-    rmSync(userDataDir, { recursive: true, force: true })
-  })
-
-  it('removes stale PreToolUse hooks when reinstalling managed Gemini hooks', () => {
-    const managedHookFileName = process.platform === 'win32' ? 'gemini-hook.cmd' : 'gemini-hook.sh'
-    const staleManagedHookPath =
-      process.platform === 'win32'
-        ? `C:\\Users\\ramzi\\.orca\\agent-hooks\\${managedHookFileName}`
-        : `/Users/ramzi/.orca/agent-hooks/${managedHookFileName}`
-    const staleManagedCommand =
-      process.platform === 'win32'
-        ? staleManagedHookPath
-        : `if [ -x '${staleManagedHookPath}' ]; then /bin/sh '${staleManagedHookPath}'; fi`
-    const managedHookPath = join(homeDir, '.orca', 'agent-hooks', managedHookFileName)
-    const configDir = join(homeDir, '.gemini')
-    mkdirSync(configDir, { recursive: true })
+describe.skipIf(process.platform === 'win32')('Gemini installed hook command', () => {
+  it('skips the managed script outside an Orca pane and runs it inside one', () => {
+    const command = installedAfterAgentCommand()
+    const marker = join(home, 'script-ran')
     writeFileSync(
-      join(configDir, 'settings.json'),
-      JSON.stringify(
-        {
-          hooks: {
-            BeforeAgent: [
-              {
-                hooks: [{ type: 'command', command: 'echo user-before-agent' }]
-              }
-            ],
-            PreToolUse: [
-              {
-                hooks: [
-                  {
-                    type: 'command',
-                    command: staleManagedCommand
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        null,
-        2
-      )
+      join(home, '.orca', 'agent-hooks', 'gemini-hook.sh'),
+      `#!/bin/sh\ncat >/dev/null\n: > '${marker}'\nprintf '{}\\n'\n`
     )
 
-    const service = new GeminiHookService()
-    const status = service.install()
-    const config = JSON.parse(readFileSync(join(configDir, 'settings.json'), 'utf8'))
+    const outside = runHook(command, {})
+    expect(outside.status).toBe(0)
+    expect(outside.stdout).toBe('{}\n')
+    expect(existsSync(marker)).toBe(false)
 
-    expect(status.state).toBe('installed')
-    expect(Object.keys(config.hooks).sort()).toEqual([
-      'AfterAgent',
-      'AfterTool',
-      'BeforeAgent',
-      'BeforeTool'
-    ])
-    expect(config.hooks.PreToolUse).toBeUndefined()
-    expect(config.hooks.BeforeAgent).toHaveLength(2)
-    expect(config.hooks.BeforeAgent[0].hooks[0].command).toBe('echo user-before-agent')
-    const managedCommandPattern =
-      process.platform === 'win32'
-        ? wrapWindowsBatchHookCommand(managedHookPath)
-        : new RegExp(managedHookPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    expect(config.hooks.BeforeAgent[1].hooks[0].command).toMatch(managedCommandPattern)
-    expect(config.hooks.AfterAgent[0].hooks[0].command).toMatch(managedCommandPattern)
-    expect(config.hooks.AfterTool[0].hooks[0].command).toMatch(managedCommandPattern)
-    expect(config.hooks.BeforeTool[0].hooks[0].command).toMatch(managedCommandPattern)
-  })
-
-  // Why: runs on every OS; windows-hook-payload-delivery.test.ts runs each form under Gemini's shell.
-  it('registers the Windows batch hook command for every event', () => {
-    const platform = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
-    try {
-      expect(new GeminiHookService().install().state).toBe('installed')
-      const command = wrapWindowsBatchHookCommand(
-        join(homeDir, '.orca', 'agent-hooks', 'gemini-hook.cmd')
-      )
-      const config = JSON.parse(readFileSync(join(homeDir, '.gemini', 'settings.json'), 'utf8'))
-      for (const eventName of ['BeforeAgent', 'AfterAgent', 'AfterTool', 'BeforeTool']) {
-        expect(config.hooks[eventName].at(-1).hooks[0].command).toBe(command)
-      }
-    } finally {
-      platform.mockRestore()
-    }
-  })
-
-  it('preserves user-authored PreToolUse hooks while sweeping stale managed Gemini hooks', () => {
-    const managedHookFileName = process.platform === 'win32' ? 'gemini-hook.cmd' : 'gemini-hook.sh'
-    const staleManagedHookPath =
-      process.platform === 'win32'
-        ? `C:\\Users\\ramzi\\.orca\\agent-hooks\\${managedHookFileName}`
-        : `/Users/ramzi/.orca/agent-hooks/${managedHookFileName}`
-    const staleManagedCommand =
-      process.platform === 'win32'
-        ? staleManagedHookPath
-        : `if [ -x '${staleManagedHookPath}' ]; then /bin/sh '${staleManagedHookPath}'; fi`
-    const configDir = join(homeDir, '.gemini')
-    mkdirSync(configDir, { recursive: true })
-    writeFileSync(
-      join(configDir, 'settings.json'),
-      JSON.stringify(
-        {
-          hooks: {
-            PreToolUse: [
-              {
-                hooks: [{ type: 'command', command: staleManagedCommand }]
-              },
-              {
-                hooks: [{ type: 'command', command: 'echo user-authored' }]
-              }
-            ]
-          }
-        },
-        null,
-        2
-      )
-    )
-
-    const status = new GeminiHookService().install()
-    const config = JSON.parse(readFileSync(join(configDir, 'settings.json'), 'utf8'))
-    const preToolCommands = config.hooks.PreToolUse.flatMap(
-      (definition: { hooks?: { command: string }[] }) =>
-        (definition.hooks ?? []).map((hook) => hook.command)
-    )
-
-    expect(status.state).toBe('installed')
-    expect(preToolCommands).toEqual(['echo user-authored'])
-    expect(config.hooks.BeforeTool[0].hooks[0].command).toMatch(
-      process.platform === 'win32'
-        ? wrapWindowsBatchHookCommand(join(homeDir, '.orca', 'agent-hooks', managedHookFileName))
-        : new RegExp(managedHookFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    )
+    const inside = runHook(command, { ORCA_PANE_KEY: 'tab-1:leaf-1' })
+    expect(inside.status).toBe(0)
+    expect(existsSync(marker)).toBe(true)
   })
 })

@@ -1,4 +1,7 @@
-import { toRuntimeExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
+import {
+  toRuntimeExecutionHostId,
+  type ExecutionHostId
+} from '../../../shared/execution-host/execution-host'
 
 export type RuntimeProjectRefreshSchedulerDeps = {
   refresh: (environmentId: string) => Promise<void>
@@ -154,8 +157,7 @@ export function createRuntimeProjectRefreshScheduler(
     } finally {
       entry.inFlight = false
       if (entry.pending) {
-        // Why: runtime repo events can be noisy while a remote server is merely
-        // connected; keep discovery live without letting it drive the renderer.
+        // Keep discovery current while bounding noisy connected-runtime repo events off the renderer path.
         schedule(environmentId, entry)
       }
     }
