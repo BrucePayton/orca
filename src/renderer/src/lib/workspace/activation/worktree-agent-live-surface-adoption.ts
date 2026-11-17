@@ -217,6 +217,18 @@ export async function adoptLiveWorkspacePtySurfaces(
       declinedPtyIds.push(ptyId)
       continue
     }
+    const recordedTabId = 'unowned' in owner ? owner.recorded?.tabId : owner.tabId
+    if (
+      recordedTabId &&
+      hasClosedTerminalTabRecord(
+        getState().closedTerminalTabTombstonesByTabId,
+        recordedTabId,
+        worktreeId
+      )
+    ) {
+      declinedPtyIds.push(ptyId)
+      continue
+    }
     const mainPlaces =
       ORCA_LAYOUT_OWNER_IS_MAIN && runtimeEnvironmentIdUnlessTwin(getState(), worktreeId) === null
     // Main places unshown terminals before answering, so its named pane/frame owns presentation. Window writes nothing; paired servers retain their existing path.
